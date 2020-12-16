@@ -138,7 +138,7 @@ class HomeScreen extends React.Component {
       //Trigger load function, update dataframe
       async updateDataframe() {
         await getPets();
-        
+        console.log(appPets)
         this.setState({theList:appPets});
         this.setState({list_wascreated:true});
 
@@ -158,43 +158,28 @@ class HomeScreen extends React.Component {
       }*/
      // console.log('brrr')
           if (this.state.theList[0]) {
+           if (this.state.pet1.Happiness <= 0 || this.state.pet1.Stamina <= 0) {
+            this.onDeletePet(this.state.pet1.key)
+            }
           await this.updateTimer(this.state.pet1.key, this.state.pet1, this.state.pet1.dateAdded, this.state.pet1.Stamina, this.state.pet1.Happiness);
           }
           if (this.state.theList[1]) {
+            if (this.state.pet2.Happiness <= 0 || this.state.pet2.Stamina <= 0) {
+              this.onDeletePet(this.state.pet2.key)
+            }
          await this.updateTimer(this.state.pet2.key, this.state.pet2, this.state.pet2.dateAdded, this.state.pet2.Stamina, this.state.pet2.Happiness);
           }
           if (this.state.theList[2]) {
+            if (this.state.pet3.Happiness <= 0 || this.state.pet3.Stamina <= 0) {
+              this.onDeletePet(this.state.pet3.key)
+            }
           await this.updateTimer(this.state.pet3.key, this.state.pet3, this.state.pet3.dateAdded, this.state.pet3.Stamina, this.state.pet3.Happiness);
           }
        //   console.log('swaswa')
           await getPets();
-          console.log(appPets)
           this.setState({theList:appPets});
-          this.setState({list_wascreated:true})
-
-        
-      
-
-          
-
-         // await this.checkStaminaHappinessLevels(this.state.pet1.key, this.state.pet1.Stamina, this.state.pet1.Happiness);
-         // await this.checkStaminaHappinessLevels(this.state.pet2.key, this.state.pet2.Stamina, this.state.pet2.Happiness);
-
-         // await this.checkStaminaHappinessLevels(this.state.pet3.key, this.state.pet3.Stamina, this.state.pet3.Happiness);
-
-      
-        
-        
+          this.setState({list_wascreated:true})        
       }
-
-    /*  checkStaminaHappinessLevels = (key, stamina, happiness) => {
-        console.log("key is : ", key);
-        console.log("stamina is : ", stamina);
-        console.log("happiness is : ", happiness);
-        if( stamina <= 0 || happiness <=0){
-        this.onDeletePet(key);
-        }
-      }*/
 
       updateTimer = async(id, pet, dateAdded, stamina, happiness) => { //ALISON - updateTimer reduces stamina and happiness over time
     
@@ -224,13 +209,10 @@ class HomeScreen extends React.Component {
           happiness -= multipliedPointsToRemove;
     
         }
-         if( stamina <= 0 || happiness <=0){
-           this.onDeletePet(id);
-         }
     
-       //pet.dateAdded = latestDate;  //ALISON - update dateAdded every time the user interacts with their pet - updateTimer() gets called when the pet page laods after the user clicks the Interact button
-       //pet.stamina = stamina;
-       //pet.happiness = happiness;
+       pet.dateAdded = latestDate;  //ALISON - update dateAdded every time the user interacts with their pet - updateTimer() gets called when the pet page laods after the user clicks the Interact button
+       pet.stamina = stamina;
+       pet.happiness = happiness;
     
        UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.stamina, pet.happiness, pet.canFeed, pet.canPlay, pet.dateAdded)
     
@@ -261,11 +243,6 @@ class HomeScreen extends React.Component {
         this.focusUnsubscribe = this.props.navigation.addListener('focus', this.onFocus);
         this.updateDataframe();
         this.createlist();
-        // setInterval(() => {
-        // this.updateDataframe()
-        // }, 1000);
-
-
         }
     
         componentWillUnmount() {
@@ -365,14 +342,14 @@ if (presentlist.includes(1)) {
   petbutton1 =
   <TouchableOpacity 
       style={styles.interactbutton}
-      onPress={()=>{this.updateDataframe()
-        console.log(appPets)
+      onPress={()=>{
         this.props.navigation.navigate("Interact", {
         Place: 1,
         })}}>
       <Text>Interact</Text>
     </TouchableOpacity>
 }
+
 
 
 
@@ -773,7 +750,8 @@ class PetInteraction extends React.Component {
 
   async componentDidMount() {
     this.focusUnsubscribe = this.props.navigation.addListener('focus', this.onFocus);
-   this.updateDataframe()
+    this.updateDataframe()
+
     }
 
     componentWillUnmount() {
@@ -782,17 +760,55 @@ class PetInteraction extends React.Component {
 
    async updateDataframe() {
     await getPets();
-    console.log(appPets)
     this.setState({theList:appPets});
     this.setState({list_wascreated:true});
     this.state.currentpet = this.state.theList[(this.props.route.params.Place) - 1];
-    //await this.updateTimer(this.state.currentpet.key, this.state.currentpet, this.state.currentpet.dateAdded, this.state.currentpet.Stamina, this.state.currentpet.Happiness); //ALISON - updateTimer() gets called when the pet page laods after the user clicks the Interact button
-    //await getPets();  //need to call getPets again to get changes made in updateTimer
-    //this.setState({theList:appPets}); 
-    //this.setState({list_wascreated:true});
-    //this.state.currentpet = this.state.theList[(this.props.route.params.Place) - 1];
-    
+    await this.updateTimer(this.state.currentpet.key, this.state.currentpet, this.state.currentpet.dateAdded, this.state.currentpet.Stamina, this.state.currentpet.Happiness); //ALISON - updateTimer() gets called when the pet page laods after the user clicks the Interact button
+    await getPets();  //need to call getPets again to get changes made in updateTimer
+    this.setState({theList:appPets}); 
+    this.setState({list_wascreated:true});
+    this.state.currentpet = this.state.theList[(this.props.route.params.Place) - 1];
    }
+
+   updateTimer = async(id, pet, dateAdded, stamina, happiness) => { //ALISON - updateTimer reduces stamina and happiness over time
+    
+
+    let latestDate = new Date();
+      
+
+    let dateDifference = (latestDate - dateAdded.toDate());
+        // console.log("Date difference is:  ", dateDifference);  //time returned is in milliseconds
+      
+
+    //milliseconds per hour 3,600,000
+    //milliseconds per day 86,400,000
+    //milliseconds per minute 60,000
+
+    let multiplier = 0
+    let pointsToRemove = 10;
+
+    if(dateDifference > 1000 && stamina !=0 && happiness !=0 ){  //for testing: swap 86400000 for 60000 to test in minutes
+
+    multiplier = Math.floor(dateDifference/1000); //for testing: swap 86400000 for 60000 to test in minutes
+         //console.log("multiplyer is : ", multiplier);
+      
+    multipliedPointsToRemove = pointsToRemove * multiplier  //mulitply number of days by number of points to remove per dat
+    
+      stamina -= multipliedPointsToRemove;
+      happiness -= multipliedPointsToRemove;
+
+    }
+   //  if( stamina <= 0 || happiness <=0){
+   //    this.onDeletePet(id);
+   //  }
+
+   pet.dateAdded = latestDate;  //ALISON - update dateAdded every time the user interacts with their pet - updateTimer() gets called when the pet page laods after the user clicks the Interact button
+   pet.stamina = stamina;
+   pet.happiness = happiness;
+
+   UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.stamina, pet.happiness, pet.canFeed, pet.canPlay, pet.dateAdded)
+
+  }
 
   onFocus = () => {
     this.updateDataframe()
@@ -871,6 +887,7 @@ class PetInteraction extends React.Component {
 
   render() {
     let petintpic;
+    if (this.state.currentpet.Stamina > 0 && this.state.currentpet.Happiness > 0){
     if (this.state.currentpet.species === 'Dog' && this.state.currentpet.Stamina >= 50 && this.state.currentpet.Happiness >= 50){ //STEPHEN
       petintpic = 
       <Image style={styles.petImageStyle2} source={require('./images/pixeldog3.png')}/>  
@@ -929,7 +946,19 @@ class PetInteraction extends React.Component {
     if (this.state.currentpet.species === 'Bird' && this.state.currentpet.Stamina >= 50 && this.state.currentpet.Happiness < 50){
       petintpic = 
       <Image style={styles.petImageStyle2} source={require('./images/pixelbird3_sad.png')}/>  
-      }
+      }}
+    else {
+      petintpic= <View style={styles.looseconditioncontainer}>
+      <Text style={styles.looseconditionlabel}>
+        OH NO!
+      </Text>
+      <View>
+        <Text style = {styles.looseconditiontext}>
+          Your pet ran away. You monster.
+        </Text>
+        </View>
+    </View>
+    }
 
     return (
       <View style={styles.footerButtonContainer}>

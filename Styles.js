@@ -19,6 +19,20 @@ export const styles = StyleSheet.create({
     marginTop: 25,
   },
 
+  looseconditioncontainer: {
+  alignItems: "center",
+  paddingTop: 25,
+  paddingBottom: 25,
+  },
+
+  looseconditionlabel: {
+  fontSize: 40,
+  },
+
+  looseconditiontext: {
+    fontSize: 24,
+  },
+
   header: {
     alignItems: "center",
     marginTop: 50,
