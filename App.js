@@ -88,14 +88,17 @@ async function addNewToFireBase(species, pic, name, key){ //uncessessary require
 
   function activateFeed(pet) { // MAGGIE: not sure if this works, needs testing
     UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, true, pet.canPlay, pet.dateAdded);
-    feedbutton = true;
+    pet.canFeed = true; // MAGGIE 16
+    // feedbutton = true;
   }
 
   function activatePlay(pet) { // MAGGIE: not sure if this works, needs testing
     UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, true, pet.dateAdded);
+    pet.canPlay = true; // MAGGIE 16
+    // playbutton = true;
   }
 
-  async function refreshFeed(pet) {
+  async function refreshFeed(pet, feedbutton) { // MAGGIE 16
     if (pet.canFeed == true) {
       return;
     }
@@ -105,12 +108,12 @@ async function addNewToFireBase(species, pic, name, key){ //uncessessary require
     }
   }
 
-  async function refreshPlay(pet) {
+  async function refreshPlay(pet, playbutton) { // MAGGIE 16
     if (pet.canPlay == true) {
       return;
     }
     else {
-      setTimeout(() => activatePlay(pet), 10000);
+      setTimeout(() => playbutton = activatePlay(pet), 10000); // MAGGIE 16
     }
     
   }
@@ -745,18 +748,25 @@ class PetInteraction extends React.Component {
       playbutton: true,
       timeOfPlayPress: 'reee',
       y: '',
+      // dummy: 0,
     }
   }
 
   async componentDidMount() {
     this.focusUnsubscribe = this.props.navigation.addListener('focus', this.onFocus);
-    this.updateDataframe()
-
+    this.updateDataframe();
+    // this.apiCalls();
     }
 
     componentWillUnmount() {
     this.focusUnsubscribe();
   }
+
+  // apiCalls() {
+  //   this.setState({
+  //     currentpet: this.state.currentpet,
+  //   });
+  // }
 
    async updateDataframe() {
     await getPets();
@@ -814,12 +824,36 @@ class PetInteraction extends React.Component {
     this.updateDataframe()
   }
 
+  // refreshFeed = async(pet, feedbutton) => { // MAGGIE 16
+  //   if (pet.canFeed == true) {
+  //     return;
+  //   }
+  //   else {
+  //     setTimeout(() => feedbutton = activateFeed(pet, feedbutton), 10000);
+  //     this.setState({
+  //       feedbutton: feedbutton,
+  //     });
+  //   }
+  // }
+
+  // refreshPlay = async(pet, playbutton) => { // MAGGIE 16
+  //   if (pet.canFeed == true) {
+  //     return;
+  //   }
+  //   else {
+  //     setTimeout(() => playbutton = activatePlay(pet, playbutton), 10000);
+  //     this.setState({
+  //       playbutton: playbutton,
+  //     });
+  //   }
+  // }
+
   feedPet = async(pet) => { // STEPHEN: Recomend reducing this for testing purposes. Didn't get to this yet.
     if (pet.canFeed == true && pet.Stamina <= 100) {
       pet.Stamina += 20;
       pet.canFeed = false;
-      this.setState({feedbutton:false})
-      refreshFeed(pet);
+      this.setState({feedbutton:false});
+      await refreshFeed(pet, this.state.feedbutton); // MAGGIE 16
       if (pet.Stamina > 100) {
         pet.Stamina = 100
       } // MAGGIE E
@@ -827,6 +861,7 @@ class PetInteraction extends React.Component {
       this.updateDataframe(); // MAGGIE E
       this.setState({
         currentpet: pet,
+        // feedbutton: this.state.feedbutton,  // MAGGIE 16
       });
       return pet; 
     }
@@ -849,8 +884,8 @@ class PetInteraction extends React.Component {
     if (pet.canPlay == true && pet.Happiness <= 100) {
       pet.Happiness += 20;
       pet.canPlay = false;
-      this.setState({playbutton:false})
-      x = await refreshPlay(pet);
+      this.setState({playbutton:false});
+      x = await refreshPlay(pet, this.state.playbutton); // MAGGIE 16
       if (pet.Happiness > 100) {
         pet.Happiness = 100
       }
@@ -858,6 +893,7 @@ class PetInteraction extends React.Component {
       this.updateDataframe(); // MAGGIE E: added awaits
       this.setState({
         currentpet: pet,
+        // playbutton: this.state.playbutton, // MAGGIE 16
       });
       return pet;
     }
@@ -865,6 +901,10 @@ class PetInteraction extends React.Component {
       return;
     }
   }
+
+  // refreshFeedButton = async(feedbutton) => {
+  //   this.setState
+  // }
 
   NegplayPet = async(id, pet) => {
   
@@ -976,18 +1016,18 @@ class PetInteraction extends React.Component {
         </Text>
     
       <TouchableOpacity
-        disabled = {!this.state.feedbutton}
-        style={[(this.state.feedbutton) ? styles.petintbutton:styles.petintbutton2]}
+        // disabled = {!this.state.feedbutton}
+        style={[(this.state.currentpet.canFeed) ? styles.petintbutton:styles.petintbutton2]}
         onPress={()=>{  // MAGGIE
           this.feedPet(this.state.currentpet) // MAGGIE E
+          
         }}>
         <Text>Feed</Text>
       </TouchableOpacity>
       <TouchableOpacity
 
-
-        disabled = {!this.state.playbutton}
-        style={[(this.state.playbutton) ? styles.petintbutton:styles.petintbutton2]}
+        // disabled = {!this.state.playbutton} // MAGGIE 16
+        style={[(this.state.currentpet.canPlay) ? styles.petintbutton:styles.petintbutton2]}
         onPress={()=>{
           this.playPet(this.state.currentpet); // MAGGIE E
   
@@ -1020,6 +1060,7 @@ class PetInteraction extends React.Component {
                       this.props.navigation.navigate("Home")}}>
         <Text>Release</Text>
       </TouchableOpacity>
+
       </View>
       
     );
