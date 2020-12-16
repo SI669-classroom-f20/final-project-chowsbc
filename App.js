@@ -75,7 +75,6 @@ async function addNewToFireBase(species, pic, name, key){ //uncessessary require
 
   //Load function
   async function getPets() { // MAGGIE
-    console.log('brrr')
     appPets = [];
     let qSnap = await invCollRef.get();
     qSnap.forEach(qDocSnap => {
@@ -139,6 +138,7 @@ class HomeScreen extends React.Component {
       //Trigger load function, update dataframe
       async updateDataframe() {
         await getPets();
+        
         this.setState({theList:appPets});
         this.setState({list_wascreated:true});
 
@@ -168,8 +168,8 @@ class HomeScreen extends React.Component {
           }
        //   console.log('swaswa')
           await getPets();
+          console.log(appPets)
           this.setState({theList:appPets});
-          console.log(this.state.theList)
           this.setState({list_wascreated:true})
 
         
@@ -224,13 +224,13 @@ class HomeScreen extends React.Component {
           happiness -= multipliedPointsToRemove;
     
         }
-        if( stamina <= 0 || happiness <=0){
-          this.onDeletePet(id);
-        }
+         if( stamina <= 0 || happiness <=0){
+           this.onDeletePet(id);
+         }
     
-       pet.dateAdded = latestDate;  //ALISON - update dateAdded every time the user interacts with their pet - updateTimer() gets called when the pet page laods after the user clicks the Interact button
-       pet.stamina = stamina;
-       pet.happiness = happiness;
+       //pet.dateAdded = latestDate;  //ALISON - update dateAdded every time the user interacts with their pet - updateTimer() gets called when the pet page laods after the user clicks the Interact button
+       //pet.stamina = stamina;
+       //pet.happiness = happiness;
     
        UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.stamina, pet.happiness, pet.canFeed, pet.canPlay, pet.dateAdded)
     
@@ -239,7 +239,6 @@ class HomeScreen extends React.Component {
 
 
       async onDeletePet(key) { //STEPHEN
-        console.log("onDelete was called !!!");
         let inventoryRef = db.collection('pets');
         let itemDoc = inventoryRef.doc(String(key));
         await itemDoc.delete();
@@ -366,7 +365,9 @@ if (presentlist.includes(1)) {
   petbutton1 =
   <TouchableOpacity 
       style={styles.interactbutton}
-      onPress={()=>{this.props.navigation.navigate("Interact", {
+      onPress={()=>{this.updateDataframe()
+        console.log(appPets)
+        this.props.navigation.navigate("Interact", {
         Place: 1,
         })}}>
       <Text>Interact</Text>
@@ -772,7 +773,7 @@ class PetInteraction extends React.Component {
 
   async componentDidMount() {
     this.focusUnsubscribe = this.props.navigation.addListener('focus', this.onFocus);
-    this.updateDataframe();
+   this.updateDataframe()
     }
 
     componentWillUnmount() {
@@ -781,6 +782,7 @@ class PetInteraction extends React.Component {
 
    async updateDataframe() {
     await getPets();
+    console.log(appPets)
     this.setState({theList:appPets});
     this.setState({list_wascreated:true});
     this.state.currentpet = this.state.theList[(this.props.route.params.Place) - 1];
@@ -793,8 +795,7 @@ class PetInteraction extends React.Component {
    }
 
   onFocus = () => {
-    this.updateDataframe();
-    
+    this.updateDataframe()
   }
 
   feedPet = async(pet) => { // STEPHEN: Recomend reducing this for testing purposes. Didn't get to this yet.
