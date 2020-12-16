@@ -32,7 +32,7 @@ let feedbutton = '';
 
 //Adds pet to firebase using props from naming screeen
 async function addNewToFireBase(species, pic, name, key){ //uncessessary required variables removed
-    let itemRef = db.collection('pets').doc(String(key));  
+  let itemRef = db.collection('pets').doc(String(key));  
     itemRef.set ({
         species:species,
         pic:pic,
@@ -75,6 +75,7 @@ async function addNewToFireBase(species, pic, name, key){ //uncessessary require
 
   //Load function
   async function getPets() { // MAGGIE
+    console.log('brrr')
     appPets = [];
     let qSnap = await invCollRef.get();
     qSnap.forEach(qDocSnap => {
@@ -85,10 +86,6 @@ async function addNewToFireBase(species, pic, name, key){ //uncessessary require
     });
   }
 
-  async function updateState() {
-    await getPets();
-    return appPets;  // MAGGIE: what's this function for?
-  }
 
   function activateFeed(pet) { // MAGGIE: not sure if this works, needs testing
     UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, true, pet.canPlay, pet.dateAdded);
@@ -127,8 +124,14 @@ class HomeScreen extends React.Component {
     constructor(props) {
         super(props);
         this.nextKey = 0;
+        this.place = '';
+        appPets = [];
         this.state = {
           theList: '',
+          pet1: '',
+          pet2: '',
+          pet3: '',
+         
           list_wascreated: false,
         }
       }
@@ -138,7 +141,111 @@ class HomeScreen extends React.Component {
         await getPets();
         this.setState({theList:appPets});
         this.setState({list_wascreated:true});
+
+        if (this.state.theList[0]) {
+        this.state.pet1 = this.state.theList[0];
+        }
+        if (this.state.theList[1]) {
+        this.state.pet2 = this.state.theList[1];
+        }
+        if (this.state.theList[2]) {
+        this.state.pet3 = this.state.theList[2];
+        }
+
+        /*for(let i=0; i < 3; i++){
+         this.state.pet = this.state.theList[i];
+         console.log("curentpet = ", this.state.pet);
+      }*/
+     // console.log('brrr')
+          if (this.state.theList[0]) {
+          await this.updateTimer(this.state.pet1.key, this.state.pet1, this.state.pet1.dateAdded, this.state.pet1.Stamina, this.state.pet1.Happiness);
+          }
+          if (this.state.theList[1]) {
+         await this.updateTimer(this.state.pet2.key, this.state.pet2, this.state.pet2.dateAdded, this.state.pet2.Stamina, this.state.pet2.Happiness);
+          }
+          if (this.state.theList[2]) {
+          await this.updateTimer(this.state.pet3.key, this.state.pet3, this.state.pet3.dateAdded, this.state.pet3.Stamina, this.state.pet3.Happiness);
+          }
+       //   console.log('swaswa')
+          await getPets();
+          this.setState({theList:appPets});
+          console.log(this.state.theList)
+          this.setState({list_wascreated:true})
+
+        
+      
+
+          
+
+         // await this.checkStaminaHappinessLevels(this.state.pet1.key, this.state.pet1.Stamina, this.state.pet1.Happiness);
+         // await this.checkStaminaHappinessLevels(this.state.pet2.key, this.state.pet2.Stamina, this.state.pet2.Happiness);
+
+         // await this.checkStaminaHappinessLevels(this.state.pet3.key, this.state.pet3.Stamina, this.state.pet3.Happiness);
+
+      
+        
+        
       }
+
+    /*  checkStaminaHappinessLevels = (key, stamina, happiness) => {
+        console.log("key is : ", key);
+        console.log("stamina is : ", stamina);
+        console.log("happiness is : ", happiness);
+        if( stamina <= 0 || happiness <=0){
+        this.onDeletePet(key);
+        }
+      }*/
+
+      updateTimer = async(id, pet, dateAdded, stamina, happiness) => { //ALISON - updateTimer reduces stamina and happiness over time
+    
+
+        let latestDate = new Date();
+          
+    
+        let dateDifference = (latestDate - dateAdded.toDate());
+            // console.log("Date difference is:  ", dateDifference);  //time returned is in milliseconds
+          
+    
+        //milliseconds per hour 3,600,000
+        //milliseconds per day 86,400,000
+        //milliseconds per minute 60,000
+    
+        let multiplier = 0
+        let pointsToRemove = 10;
+    
+        if(dateDifference > 1000 && stamina !=0 && happiness !=0 ){  //for testing: swap 86400000 for 60000 to test in minutes
+    
+        multiplier = Math.floor(dateDifference/1000); //for testing: swap 86400000 for 60000 to test in minutes
+             //console.log("multiplyer is : ", multiplier);
+          
+        multipliedPointsToRemove = pointsToRemove * multiplier  //mulitply number of days by number of points to remove per dat
+        
+          stamina -= multipliedPointsToRemove;
+          happiness -= multipliedPointsToRemove;
+    
+        }
+        if( stamina <= 0 || happiness <=0){
+          this.onDeletePet(id);
+        }
+    
+       pet.dateAdded = latestDate;  //ALISON - update dateAdded every time the user interacts with their pet - updateTimer() gets called when the pet page laods after the user clicks the Interact button
+       pet.stamina = stamina;
+       pet.happiness = happiness;
+    
+       UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.stamina, pet.happiness, pet.canFeed, pet.canPlay, pet.dateAdded)
+    
+      }
+
+
+
+      async onDeletePet(key) { //STEPHEN
+        console.log("onDelete was called !!!");
+        let inventoryRef = db.collection('pets');
+        let itemDoc = inventoryRef.doc(String(key));
+        await itemDoc.delete();
+        this.updateDataframe();
+      }
+    
 
       //creates a list of keys that corrospond to existing firebase items. List will have a zero at the end. This is needed for conditional rendering
       createlist() {
@@ -155,6 +262,11 @@ class HomeScreen extends React.Component {
         this.focusUnsubscribe = this.props.navigation.addListener('focus', this.onFocus);
         this.updateDataframe();
         this.createlist();
+        // setInterval(() => {
+        // this.updateDataframe()
+        // }, 1000);
+
+
         }
     
         componentWillUnmount() {
@@ -162,7 +274,7 @@ class HomeScreen extends React.Component {
       }
 
       onFocus = () => {
-        this.updateDataframe();
+        this.updateDataframe()
       }
 
 //redner function gets a list keys of present firebase items (1, 2, or 3). Then, three petlist_items (petlist_item 1, 2, and 3) are conditionally rendered
@@ -672,57 +784,17 @@ class PetInteraction extends React.Component {
     this.setState({theList:appPets});
     this.setState({list_wascreated:true});
     this.state.currentpet = this.state.theList[(this.props.route.params.Place) - 1];
-    await this.updateTimer(this.state.currentpet.key, this.state.currentpet, this.state.currentpet.dateAdded, this.state.currentpet.Stamina, this.state.currentpet.Happiness); //ALISON - updateTimer() gets called when the pet page laods after the user clicks the Interact button
-    await getPets();  //need to call getPets again to get changes made in updateTimer
-    this.setState({theList:appPets}); 
-    this.setState({list_wascreated:true});
-    this.state.currentpet = this.state.theList[(this.props.route.params.Place) - 1];
+    //await this.updateTimer(this.state.currentpet.key, this.state.currentpet, this.state.currentpet.dateAdded, this.state.currentpet.Stamina, this.state.currentpet.Happiness); //ALISON - updateTimer() gets called when the pet page laods after the user clicks the Interact button
+    //await getPets();  //need to call getPets again to get changes made in updateTimer
+    //this.setState({theList:appPets}); 
+    //this.setState({list_wascreated:true});
+    //this.state.currentpet = this.state.theList[(this.props.route.params.Place) - 1];
     
    }
 
   onFocus = () => {
     this.updateDataframe();
     
-  }
-
-  updateTimer = async(id, pet, dateAdded, stamina, happiness) => {
-    
-
-    let latestDate = new Date();
-      
-
-    let dateDifference = (latestDate - dateAdded.toDate());
-        // console.log("Date difference is:  ", dateDifference);  //time returned is in milliseconds
-      
-
-    //milliseconds per hour 3,600,000
-    //milliseconds per day 86,400,000
-    //milliseconds per minute 60,000
-
-    let multiplier = 0
-    let pointsToRemove = 10;
-
-    if(dateDifference > 86400000 && stamina !=0 && happiness !=0 ){  //for testing: swap 86400000 for 60000 to test in minutes
-
-    multiplier = Math.floor(dateDifference/86400000); //for testing: swap 86400000 for 60000 to test in minutes
-         //console.log("multiplyer is : ", multiplier);
-      
-    multipliedPointsToRemove = pointsToRemove * multiplier  //mulitply number of days by number of points to remove per dat
-    
-      stamina -= multipliedPointsToRemove;
-      happiness -= multipliedPointsToRemove;
-
-    }
-    else if( stamina <= 0 || happiness <=0){
-      this.onDeletePet(id);
-    }
-
-   pet.dateAdded = latestDate;  //ALISON - update dateAdded every time the user interacts with their pet - updateTimer() gets called when the pet page laods after the user clicks the Interact button
-   pet.stamina = stamina;
-   pet.happiness = happiness;
-
-   UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.stamina, pet.happiness, pet.canFeed, pet.canPlay, pet.dateAdded)
-
   }
 
   feedPet = async(pet) => { // STEPHEN: Recomend reducing this for testing purposes. Didn't get to this yet.
@@ -877,7 +949,6 @@ class PetInteraction extends React.Component {
         disabled = {!this.state.feedbutton}
         style={[(this.state.feedbutton) ? styles.petintbutton:styles.petintbutton2]}
         onPress={()=>{  // MAGGIE
-          console.log('reee1')
           this.feedPet(this.state.currentpet) // MAGGIE E
         }}>
         <Text>Feed</Text>
