@@ -2,7 +2,7 @@
 import 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { TextInput, Text, View, FlatList, TouchableOpacity, Image } from 'react-native';
+import { TextInput, Text, View, FlatList, TouchableOpacity, Image, KeyboardAvoidingView, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,12 +23,14 @@ if (firebase.apps.length === 0) {
 }
 const db = firebase.firestore();
 const invCollRef = db.collection('pets');
+const usersRef = db.collection('users');
 
 //Needed for conditional rendering of the buttons or pets in the pet list
 let presentlist= '';
 let firstItem = '';
 let appPets = [];
 let feedbutton = '';
+let users = []; // MAGGIE 16
 
 //Adds pet to firebase using props from naming screeen
 async function addNewToFireBase(species, pic, name, key){ //uncessessary required variables removed
@@ -85,6 +87,43 @@ async function addNewToFireBase(species, pic, name, key){ //uncessessary require
     });
   }
 
+  async function loadUsers() { // MAGGIE 16
+    let querySnap = await usersRef.get();
+    querySnap.forEach(qDocSnap => {
+      let key = qDocSnap.id;
+      let data = qDocSnap.data();
+      data.key = key;
+      users.push(data);
+    });
+  }
+
+  function getUsers() { // MAGGIE 16
+    return users;
+  }
+
+  async function createUser(email, pass, dispName) { // MAGGIE 16
+    let newUser = {
+      email: email,
+      password: pass,
+      displayName: dispName
+    }
+    let newUserDocRef = await usersRef.add(newUser);
+    
+    // get the new Firebase ID and save it as the local "key"
+    let key = newUserDocRef.id;
+    newUser.key = key;
+    users.push(newUser);
+    return newUser;
+  }
+
+  function getUserForID(id) { // MAGGIE 16
+    for (let user of users) {
+      if (user.key === id) {
+        return user;
+      }
+    }
+  }
+
 
   function activateFeed(pet) { // MAGGIE: not sure if this works, needs testing
     UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, true, pet.canPlay, pet.dateAdded);
@@ -118,6 +157,177 @@ async function addNewToFireBase(species, pic, name, key){ //uncessessary require
     
   }
 
+export class LoginScreen extends React.Component {
+  constructor(props) { // MAGGIE 16
+    super(props);
+    this.state = {
+      mode: 'login',
+      emailInput: '',
+      displayNameInput: '',
+      passwordInput: '',
+      passwordCheckInput: ''
+    }
+  }
+
+  onCreateAccount = async() => { // MAGGIE 16
+    let users = getUsers();
+    for (let user of users) {
+      if (user.email === this.state.emailInput) {
+        console.log("found matching user");
+        Alert.alert(
+          'Duplicate User',
+          'User ' + this.state.emailInput + ' already exists.',
+          [{ text: 'OK',style: 'OK'}]
+        );
+        return;
+      }
+    } // made it through loop, no user exists!
+    console.log("no matching user found, creating"); 
+    let newUser = await createUser(
+      this.state.emailInput,
+      this.state.passwordInput,
+      this.state.displayNameInput,
+      );
+    this.props.navigation.navigate("Home", {
+      currentUser: newUser,
+    });
+  }
+
+  onLogin = () => {
+    let users = getUsers();
+    let email = this.state.emailInput;
+    let pass = this.state.passwordInput;
+    for (let user of users) {
+      if (user.email === email) {
+        if (user.password === pass) {
+          // success!
+          this.props.navigation.navigate("Home", {
+            currentUser: user,
+          });
+          return;
+        }
+      }
+    }
+    // we got through all the users with no match, so failure.
+    Alert.alert(
+      'Login Failed',
+      'No match found for this email and password.',
+      [{ text: 'OK',style: 'OK'}]
+    );
+  }
+
+  render() {
+    return (
+      <KeyboardAvoidingView 
+        style={styles.container}
+        behavior={"height"}
+        keyboardVerticalOffset={10}>
+        <View style ={styles.header}>
+          <Text style={styles.headertext}>
+            User Login
+          </Text>
+        </View>
+        <View style={styles.middleView}>
+          <View style={styles.inputRow}>
+            <Text 
+              style={styles.inputLabel}
+            >Email:</Text>
+            <TextInput
+              style={styles.inputText}
+              keyboardType='email-address'
+              autoCapitalize='none'
+              autoCorrect={false}
+              autoCompleteType='email'
+              textContentType='emailAddress'
+              value={this.state.emailInput}
+              onChangeText={(text)=>{this.setState({emailInput: text})}}
+            />
+          </View>
+          {this.state.mode === 'create' ? (
+            <View style={styles.inputRow}>
+              <Text style={styles.inputLabel}>Display Name:</Text>
+              <TextInput
+                style={styles.inputText}
+                autoCapitalize='none'
+                autoCorrect={false}
+                value={this.state.displayNameInput}
+                onChangeText={(text)=>{this.setState({displayNameInput: text})}}
+              />
+            </View>
+          ):(
+            <View/>
+          )}
+          <View style={styles.inputRow}>
+            <Text style={styles.inputLabel}>Password:</Text>
+            <TextInput
+              style={styles.inputText}
+              autoCapitalize='none'
+              autoCorrect={false}
+              textContentType='password'
+              value={this.state.passwordInput}
+              onChangeText={(text)=>{this.setState({passwordInput: text})}}
+          />
+          </View>
+          {this.state.mode === 'create' ? (
+            <View style={styles.inputRow}>
+              <Text style={styles.inputLabel}>Re-enter Password:</Text>
+              <TextInput
+                style={styles.inputText}
+                autoCapitalize='none'
+                autoCorrect={false}
+                textContentType='password'  
+                value={this.state.passwordCheckInput}
+                onChangeText={(text)=>{this.setState({passwordCheckInput: text})}}
+              />
+            </View>
+          ):(
+            <View/>
+          )}
+        </View>
+        {this.state.mode === 'login' ? (
+
+          <View style={styles.bottomView}>
+            <TouchableOpacity 
+              style={styles.buttonContainer}
+              onPress={()=>{
+                this.setState({mode: 'create'})
+              }}
+              >
+              <Text style={styles.buttonText}>Create Account</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.buttonContainer}
+              onPress={this.onLogin}
+            >
+              <Text style={styles.buttonText}>Login</Text>
+            </TouchableOpacity>
+          </View>
+
+        ):(
+
+          <View style={styles.bottomView}>
+            <TouchableOpacity 
+              style={styles.buttonContainer}
+              onPress={()=>{
+                this.setState({mode: 'login'})
+              }}
+              >
+              <Text style={styles.buttonText}>Login</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.buttonContainer}
+              onPress={this.onCreateAccount}
+              >
+              <Text style={styles.buttonText}>Create</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </KeyboardAvoidingView>
+    );
+  }
+
+}
+
 
 class HomeScreen extends React.Component {
 
@@ -125,6 +335,7 @@ class HomeScreen extends React.Component {
 
     constructor(props) {
         super(props);
+        this.currentUser = this.props.route.params.currentUser;
         this.nextKey = 0;
         this.place = '';
         appPets = [];
@@ -1070,10 +1281,11 @@ class PetInteraction extends React.Component {
 const Tab = createMaterialBottomTabNavigator();
 
 function Home() {
-  return (
+  return ( // MAGGIE 16
     <Stack.Navigator
-      initialRouteName="Home"
+      initialRouteName="Login"
     >
+      <Stack.Screen name="Login" component={LoginScreen} /> 
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Maker" component={PetMaker} />
       <Stack.Screen name="Namer" component={PetNamer} />
@@ -1084,14 +1296,14 @@ function Home() {
 
 function MyTabs() {
   return (
-    <Tab.Navigator
-      initialRouteName='Home'
+    <Tab.Navigator 
+      initialRouteName='Login' // MAGGIE 16
       activeColor='#e91e63'
       labelStyle={{ fontSize: 12 }}
       style={{ backgroundColor: 'tomato' }}
     >
       <Tab.Screen
-        name='Home'
+        name='Login'
         component={Home}
         options={{
           tabBarLabel: 'Home',

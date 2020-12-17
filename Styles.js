@@ -19,6 +19,14 @@ export const styles = StyleSheet.create({
     marginTop: 25,
   },
 
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 20
+  },
+
   looseconditioncontainer: {
   alignItems: "center",
   paddingTop: 25,
@@ -155,6 +163,60 @@ export const styles = StyleSheet.create({
       margin: 0,
       resizeMode: 'contain',
       
+    },
+  
+    middleView: {
+      flex: 0.4,
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: '100%',
+    },
+
+    inputRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      alignItems: 'center',
+      paddingVertical: 15
+    },
+
+    inputLabel: {
+      flex: 0.3,
+      justifyContent: 'flex-end',
+      paddingRight: 5,
+      textAlign: 'right',
+      fontSize: 10
+    },
+
+    inputText: {
+      flex: 0.5,
+      borderColor: colors.outline,
+      paddingLeft: 5,
+      borderBottomWidth: 1,
+      fontSize: 18,
+    },
+
+    bottomView: {
+      flex: 0.3,
+      flexDirection: 'row',
+      width: '100%',
+      justifyContent: 'center',
+      alignItems: 'flex-start'
+    },
+
+    buttonText: {
+      textAlign: 'center',
+      // color: 'white'
+    },
+
+    buttonContainer: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.outline,
+      borderRadius: 6,
+      backgroundColor: colors.primary,
+      width: 100,
+      height: 50
     },
 
 });
