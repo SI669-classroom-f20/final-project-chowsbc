@@ -2,7 +2,7 @@
 import 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { TextInput, Text, View, FlatList, TouchableOpacity, Image, KeyboardAvoidingView, Alert } from 'react-native';
+import { TextInput, Text, View, FlatList, TouchableOpacity, Image, KeyboardAvoidingView, Alert, Button } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +14,10 @@ import '@firebase/firestore';
 import { firebaseConfig } from './Secrets.js';
 import fetch from 'node-fetch';
 import { CheckBox } from 'react-native-elements'
-import { Switch } from 'react-native-gesture-handler';    
+import { Switch } from 'react-native-gesture-handler';  
+import * as Permissions from 'expo-permissions';
+import { Camera } from 'expo-camera';
+  
 
 const Stack = createStackNavigator();
 const appName = "ListMaker 3000";
@@ -338,7 +341,7 @@ class HomeScreen extends React.Component {
 
     constructor(props) {
         super(props);
-     //   this.currentUser = this.props.route.params.currentUser;
+        this.currentUser = this.props.route.params.currentUser;
         this.nextKey = 0;
         this.place = '';
         appPets = [];
@@ -943,6 +946,14 @@ class ProfileScreen extends React.Component {
   constructor(props) {
     super(props);
   }
+  onTakePicture = () => {
+
+    this.props.navigation.navigate("Camera");
+    /*this.props.navigation.navigate("Camera", {
+      //chat: this.chat,
+      currentUser: this.self
+    })*/
+  }
 
   render() {
     return (
@@ -950,6 +961,12 @@ class ProfileScreen extends React.Component {
         <Text>
           This is a profile page!
         </Text>
+        <TouchableOpacity
+              
+              //onPress={()=>{this.props.navigation.navigate("Camera")}}>
+              onPress={()=>{this.onTakePicture()}}>
+                <Text> + Add a Profile Pic </Text>
+            </TouchableOpacity>  
       </View>
     );
   }
@@ -1282,19 +1299,150 @@ class PetInteraction extends React.Component {
     );
   }
 }
+
+
+export class CameraScreen extends React.Component {
+
+  constructor(props) {
+    super(props);
+
+    //this.profileScreen = getProfilePage();
+
+    this.state = {
+      hasCameraPermission: null,
+      type: Camera.Constants.Type.back,
+    };  
+  }
+
+  componentDidMount() {
+   this.getPermissions();
+   console.log ("camera screen called");
+  }
+
+  getPermissions = async () => {
+      let cameraPerms = await Permissions.askAsync(Permissions.CAMERA);
+  
+      let permGranted = cameraPerms.status === 'granted';
+      this.setState({
+        hasCameraPermission: permGranted
+      });
+    }
+  
+    handleTakePicture = async () => {
+      let picData = await this.camera.takePictureAsync();
+      console.log ("a picture was taken: ", picData);
+      //this.dataModel.addChatImage(this.chat, this.currentUser, picData);
+      //ProfileScreen.addNewImage(picData);
+      this.addNewImage(picData);
+      console.log("next line reached");
+      this.props.navigation.goBack();
+    }
+  
+    setupCamera = async (cameraRef) => { 
+      this.camera = cameraRef;
+    }
+  
+    addNewImage = async (imageObject) => {
+      console.log('... and here we would add the image ...');
+      
+  
+      this.theImage = imageObject;
+     // this.user = user;
+  
+  
+      let filename = '' + Date.now();
+      let imageRef = this.storageRef.child(filename);
+      let response = await fetch(imageObject.uri);
+      
+      let imageBlob = await response.blob();
+       await imageRef.put(imageBlob);
+  
+      let downloadURL = await imageRef.getDownloadURL();
+  
+  
+      
+      
+      let fbImageObject = {
+        height: imageObject.height,
+        width: imageObject.width,
+        imageURL: downloadURL,
+        timestamp: Date.now(),
+       // user: user.key,
+      }
+     
+      //let x =  this.chatsRef.doc(chat.key).collection('messages');
+     // let x =  this.imgTestDB.doc(user.key).collection('Images');
+      //let x  = db.collection('Images').doc(String(key)); 
+      await x.add(fbImageObject);
+    }
+  
+  
+  
+    render() {
+      const { hasCameraPermission } = this.state;
+      if (hasCameraPermission === null) {
+        return <View />;
+      } else if (hasCameraPermission === false) {
+        return <Text>No access to camera</Text>;
+      } else {
+        return (
+          <View style={{ flex: 1 }}>
+            <Camera 
+              style={{ flex: 1 }} 
+              type={this.state.type}
+              ratio='4:3'
+              pictureSize='Medium'
+              ref={this.setupCamera}
+            >
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: 'transparent',
+                  flexDirection: 'row',
+                }}>
+                <TouchableOpacity
+                  style={{
+                    flex: 0.1,
+                    alignSelf: 'flex-end',
+                    alignItems: 'center',
+                  }}
+                  onPress={() => {
+                    this.setState({
+                      type:
+                        this.state.type === Camera.Constants.Type.back
+                          ? Camera.Constants.Type.front
+                          : Camera.Constants.Type.back,
+                    });
+                  }}>
+                  <Text style={{ fontSize: 18, marginBottom: 10, color: 'white' }}> 
+                    Flip 
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </Camera>
+            <Button
+              title='Take Picture'
+              onPress={this.handleTakePicture}
+            />
+          </View>
+        );
+      }
+    }
+  }
 // App constructor and nav bar
 const Tab = createMaterialBottomTabNavigator();
 
 function Home() {
   return ( // MAGGIE 16
     <Stack.Navigator
-      initialRouteName="Home"
+      initialRouteName="Login"
     >
       <Stack.Screen name="Login" component={LoginScreen} /> 
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Maker" component={PetMaker} />
       <Stack.Screen name="Namer" component={PetNamer} />
       <Stack.Screen name="Interact" component={PetInteraction} />
+      <Stack.Screen name="Camera" component={CameraScreen} />
     </Stack.Navigator>
   );
 }
@@ -1338,5 +1486,8 @@ function App() {
     </NavigationContainer>
   );
 }
+
+
+
   
 export default App;
