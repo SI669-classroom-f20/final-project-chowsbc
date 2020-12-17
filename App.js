@@ -2,7 +2,7 @@
 import 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { TextInput, Text, View, FlatList, TouchableOpacity, Image, KeyboardAvoidingView, Alert, Button } from 'react-native';
+import { TextInput, Text, View, FlatList, TouchableOpacity, Image, KeyboardAvoidingView, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,15 +14,12 @@ import '@firebase/firestore';
 import { firebaseConfig } from './Secrets.js';
 import fetch from 'node-fetch';
 import { CheckBox } from 'react-native-elements'
-import { Switch } from 'react-native-gesture-handler';  
-import * as Permissions from 'expo-permissions';
-import { Camera } from 'expo-camera';
-  
+import { Switch } from 'react-native-gesture-handler';    
 
 const Stack = createStackNavigator();
 const appName = "ListMaker 3000";
 if (firebase.apps.length === 0) {
-  firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.firestore();
 const invCollRef = db.collection('pets');
@@ -34,9 +31,10 @@ let firstItem = '';
 let appPets = [];
 let feedbutton = '';
 let users = []; // MAGGIE 16
+let currentuser = ''; //STEPHEN 17
 
 //Adds pet to firebase using props from naming screeen
-async function addNewToFireBase(species, pic, name, key, index){ //uncessessary required variables removed
+async function addNewToFireBase(species, pic, name, key, user, index){ //uncessessary required variables removed STEPHEN 17
   let itemRef = db.collection('pets').doc(String(index));  
     itemRef.set ({
         species:species,
@@ -48,7 +46,8 @@ async function addNewToFireBase(species, pic, name, key, index){ //uncessessary 
         canFeed: true,  // MAGGIE
         canPlay: true,
         dateAdded: new Date (),
-        index: index
+        user: user, // STEPHEN 17
+        index: index,
     });
   }
 
@@ -79,6 +78,7 @@ async function addNewToFireBase(species, pic, name, key, index){ //uncessessary 
       newPet.key = key;
       appPets[petIndex] = newPet;
     }
+    console.log('updated')
   }
 
   //Load function
@@ -88,8 +88,10 @@ async function addNewToFireBase(species, pic, name, key, index){ //uncessessary 
     qSnap.forEach(qDocSnap => {
       // let key = qDocSnap.id;  // MAGGIE E
       let data = qDocSnap.data();
-      // data.key = key;  // MAGGIE E
+    //  console.log(currentuser)
+      if(data.user === currentuser){
       appPets.push(data);
+      }
     });
   }
 
@@ -133,32 +135,36 @@ async function addNewToFireBase(species, pic, name, key, index){ //uncessessary 
 
   function activateFeed(pet) { // MAGGIE: not sure if this works, needs testing
     UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, true, pet.canPlay, pet.dateAdded, pet.index);
+    console.log('activatefeed')
     pet.canFeed = true; // MAGGIE 16
     // feedbutton = true;
   }
 
   function activatePlay(pet) { // MAGGIE: not sure if this works, needs testing
+    console.log('activateplay')
     UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, true, pet.dateAdded, pet.index);
     pet.canPlay = true; // MAGGIE 16
     // playbutton = true;
   }
 
   async function refreshFeed(pet, feedbutton) { // MAGGIE 16
+    console.log('refreshfeed')
     if (pet.canFeed == true) {
       return;
     }
     else {
-      setTimeout(() => feedbutton = activateFeed(pet), 10000);
+      setTimeout(() => feedbutton = activateFeed(pet), 5000);
 
     }
   }
 
   async function refreshPlay(pet, playbutton) { // MAGGIE 16
+    console.log('refreshplay')
     if (pet.canPlay == true) {
       return;
     }
     else {
-      setTimeout(() => playbutton = activatePlay(pet), 10000); // MAGGIE 16
+      setTimeout(() => playbutton = activatePlay(pet), 5000); // MAGGIE 16
     }
     
   }
@@ -359,7 +365,6 @@ class HomeScreen extends React.Component {
       async updateDataframe() {
         await getPets();
         
-        console.log(appPets)
         this.setState({theList:appPets});
         this.setState({list_wascreated:true});
 
@@ -419,9 +424,9 @@ class HomeScreen extends React.Component {
         let multiplier = 0
         let pointsToRemove = 10;
     
-        if(dateDifference > 3000 && stamina !=0 && happiness !=0 )  //for testing: swap 86400000 for 60000 to test in minutes
+        if(dateDifference > 600000 && stamina !=0 && happiness !=0 )  //for testing: swap 86400000 for 60000 to test in minutes
     
-        multiplier = Math.floor(dateDifference/3000); //for testing: swap 86400000 for 60000 to test in minutes
+        multiplier = Math.floor(dateDifference/600000); //for testing: swap 86400000 for 60000 to test in minutes
              //console.log("multiplyer is : ", multiplier);
           
         multipliedPointsToRemove = pointsToRemove * multiplier  //mulitply number of days by number of points to remove per dat
@@ -474,6 +479,7 @@ class HomeScreen extends React.Component {
 
       onFocus = () => {
         this.updateDataframe()
+        currentuser = this.props.route.params.currentUser.displayName;
       }
 
 //redner function gets a list keys of present firebase items (1, 2, or 3). Then, three petlist_items (petlist_item 1, 2, and 3) are conditionally rendered
@@ -498,8 +504,10 @@ render() {
     introtext = 
     <TouchableOpacity 
       style={styles.footerButton}
-      onPress={()=>{this.props.navigation.navigate("Maker", {
+      onPress={()=>{
+        this.props.navigation.navigate("Maker", {
         Place: 1,
+        user:this.currentUser, //STEPHEN 17
         })}}>
       <Text>Pet 1</Text>
     </TouchableOpacity>
@@ -599,6 +607,7 @@ introtext2 =
   style={styles.footerButton}
   onPress={()=>{this.props.navigation.navigate("Maker", {
     Place: 2,
+    user:this.currentUser,
     })}}>
   <Text>Pet 2</Text>
 </TouchableOpacity>
@@ -695,6 +704,7 @@ introtext3 =
   style={styles.footerButton}
   onPress={()=>{this.props.navigation.navigate("Maker", {
     Place: 3,
+    user:this.currentUser,
     })}}>
   <Text>Pet 3</Text>
 </TouchableOpacity> 
@@ -804,6 +814,7 @@ class PetMaker extends React.Component {
         appPets = [];
         this.operation = this.props.route.params.operation;
         this.place = '';
+        this.user = ''
         this.animal = '';
         this.picture = '';
       }
@@ -823,6 +834,7 @@ class PetMaker extends React.Component {
       //recieves "place" from Homescreen
       onFocus = () => {
         this.place = this.props.route.params.Place;
+        this.user = this.props.route.params.user;
       }
 
   //buttons pass the Animal(species), the Picture, the pet's place in the list, to the PetNamer class.
@@ -844,6 +856,7 @@ render() {
               {Place:this.place,
               Animal:"Dog",
               Picture: "dog.jpg",
+              user: this.props.route.params.user,
               }
               )}}>
               <Image style={styles.petImageStyle1} source={require('./images/pixeldog3.png')}/>  
@@ -855,6 +868,7 @@ render() {
               {Place:this.place,
               Animal:"Cat",
               Picture: "cat.jpg",
+              user: this.props.route.params.user,
               }
               )}}>
               <Image style={styles.petImageStyle1} source={require('./images/pixelcat3.png')}/>  
@@ -866,6 +880,7 @@ render() {
               {Place:this.place,
               Animal:"Bird",
               Picture: "bird.jpg",
+              user: this.props.route.params.user,
               }
               )}}>
               <Image style={styles.petImageStyle1} source={require('./images/pixelbird3.png')}/>  
@@ -881,6 +896,7 @@ class PetNamer extends React.Component {
   constructor(props) {
       super(props);
       appPets = [];
+      user = [];
       this.state = {
         inputText: '',
  
@@ -900,6 +916,7 @@ class PetNamer extends React.Component {
     
     //recieves place, animal, and picture from PetMaker
     onFocus = () => {
+      this.user = this.props.route.params.user;
       this.place = this.props.route.params.Place;
       this.animal = this.props.route.params.Animal;
       this.picture = this.props.route.params.Picture;
@@ -931,7 +948,7 @@ render() {
         style={[(this.state.inputText) ? styles.footerButton:styles.footerButton2]}
         onPress={()=>{let index = this.place + Math.random()
         this.props.navigation.navigate("Home",
-        addNewToFireBase(this.animal, this.picture, this.state.inputText, this.place, index)
+        addNewToFireBase(this.animal, this.picture, this.state.inputText, this.place, this.user.displayName, index)
         )}}>
         <Text>Create Pet!</Text>
       </TouchableOpacity>
@@ -949,10 +966,10 @@ class ProfileScreen extends React.Component {
   onTakePicture = () => {
 
     this.props.navigation.navigate("Camera");
-    /*this.props.navigation.navigate("Camera", {
-      //chat: this.chat,
+    this.props.navigation.navigate("Camera", {
+      chat: this.chat,
       currentUser: this.self
-    })*/
+    })
   }
 
   render() {
@@ -1033,9 +1050,9 @@ class PetInteraction extends React.Component {
     let multiplier = 0
     let pointsToRemove = 10;
 
-    if(dateDifference > 3000 && stamina !=0 && happiness !=0 )  //for testing: swap 86400000 for 60000 to test in minutes
+    if(dateDifference > 20000 && stamina !=0 && happiness !=0 )  //for testing: swap 86400000 for 60000 to test in minutes
 
-    multiplier = Math.floor(dateDifference/3000); //for testing: swap 86400000 for 60000 to test in minutes
+    multiplier = Math.floor(dateDifference/20000); //for testing: swap 86400000 for 60000 to test in minutes
          //console.log("multiplyer is : ", multiplier);
       
     multipliedPointsToRemove = pointsToRemove * multiplier  //mulitply number of days by number of points to remove per dat
@@ -1057,31 +1074,34 @@ class PetInteraction extends React.Component {
     this.updateDataframe()
   }
 
-  // refreshFeed = async(pet, feedbutton) => { // MAGGIE 16
+  //  refreshFeed = async(pet, feedbutton) => { // MAGGIE 16
+  //   console.log('refresh') 
   //   if (pet.canFeed == true) {
-  //     return;
-  //   }
-  //   else {
-  //     setTimeout(() => feedbutton = activateFeed(pet, feedbutton), 10000);
-  //     this.setState({
-  //       feedbutton: feedbutton,
-  //     });
-  //   }
-  // }
+  //      return;
+  //    }
+  //    else {
+  //      setTimeout(() => feedbutton = activateFeed(pet, feedbutton), 10000);
+  //      this.setState({
+  //        feedbutton: feedbutton,
+  //      });
+  //    }
+  //  }
 
-  // refreshPlay = async(pet, playbutton) => { // MAGGIE 16
+  //  refreshPlay = async(pet, playbutton) => { // MAGGIE 16
+  //   console.log('refreshplay')
   //   if (pet.canFeed == true) {
-  //     return;
-  //   }
-  //   else {
-  //     setTimeout(() => playbutton = activatePlay(pet, playbutton), 10000);
-  //     this.setState({
-  //       playbutton: playbutton,
-  //     });
-  //   }
-  // }
+  //      return;
+  //    }
+  //    else {
+  //      setTimeout(() => playbutton = activatePlay(pet, playbutton), 10000);
+  //      this.setState({
+  //        playbutton: playbutton,
+  //      });
+  //    }
+  //  }
 
   feedPet = async(pet) => { // STEPHEN: Recomend reducing this for testing purposes. Didn't get to this yet.
+    console.log('feed')
     if (pet.canFeed == true && pet.Stamina <= 100) {
       pet.Stamina += 20;
       pet.canFeed = false;
@@ -1299,136 +1319,6 @@ class PetInteraction extends React.Component {
     );
   }
 }
-
-
-export class CameraScreen extends React.Component {
-
-  constructor(props) {
-    super(props);
-
-    //this.profileScreen = getProfilePage();
-
-    this.state = {
-      hasCameraPermission: null,
-      type: Camera.Constants.Type.back,
-    };  
-  }
-
-  componentDidMount() {
-   this.getPermissions();
-   console.log ("camera screen called");
-  }
-
-  getPermissions = async () => {
-      let cameraPerms = await Permissions.askAsync(Permissions.CAMERA);
-  
-      let permGranted = cameraPerms.status === 'granted';
-      this.setState({
-        hasCameraPermission: permGranted
-      });
-    }
-  
-    handleTakePicture = async () => {
-      let picData = await this.camera.takePictureAsync();
-      console.log ("a picture was taken: ", picData);
-      //this.dataModel.addChatImage(this.chat, this.currentUser, picData);
-      //ProfileScreen.addNewImage(picData);
-      this.addNewImage(picData);
-      console.log("next line reached");
-      this.props.navigation.goBack();
-    }
-  
-    setupCamera = async (cameraRef) => { 
-      this.camera = cameraRef;
-    }
-  
-    addNewImage = async (imageObject) => {
-      console.log('... and here we would add the image ...');
-      
-  
-      this.theImage = imageObject;
-     // this.user = user;
-  
-  
-      let filename = '' + Date.now();
-      let imageRef = this.storageRef.child(filename);
-      let response = await fetch(imageObject.uri);
-      
-      let imageBlob = await response.blob();
-       await imageRef.put(imageBlob);
-  
-      let downloadURL = await imageRef.getDownloadURL();
-  
-  
-      
-      
-      let fbImageObject = {
-        height: imageObject.height,
-        width: imageObject.width,
-        imageURL: downloadURL,
-        timestamp: Date.now(),
-       // user: user.key,
-      }
-     
-      //let x =  this.chatsRef.doc(chat.key).collection('messages');
-     // let x =  this.imgTestDB.doc(user.key).collection('Images');
-      //let x  = db.collection('Images').doc(String(key)); 
-      await x.add(fbImageObject);
-    }
-  
-  
-  
-    render() {
-      const { hasCameraPermission } = this.state;
-      if (hasCameraPermission === null) {
-        return <View />;
-      } else if (hasCameraPermission === false) {
-        return <Text>No access to camera</Text>;
-      } else {
-        return (
-          <View style={{ flex: 1 }}>
-            <Camera 
-              style={{ flex: 1 }} 
-              type={this.state.type}
-              ratio='4:3'
-              pictureSize='Medium'
-              ref={this.setupCamera}
-            >
-              <View
-                style={{
-                  flex: 1,
-                  backgroundColor: 'transparent',
-                  flexDirection: 'row',
-                }}>
-                <TouchableOpacity
-                  style={{
-                    flex: 0.1,
-                    alignSelf: 'flex-end',
-                    alignItems: 'center',
-                  }}
-                  onPress={() => {
-                    this.setState({
-                      type:
-                        this.state.type === Camera.Constants.Type.back
-                          ? Camera.Constants.Type.front
-                          : Camera.Constants.Type.back,
-                    });
-                  }}>
-                  <Text style={{ fontSize: 18, marginBottom: 10, color: 'white' }}> 
-                    Flip 
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </Camera>
-            <Button
-              title='Take Picture'
-              onPress={this.handleTakePicture}
-            />
-          </View>
-        );
-      }
-    }
-  }
 // App constructor and nav bar
 const Tab = createMaterialBottomTabNavigator();
 
@@ -1442,7 +1332,6 @@ function Home() {
       <Stack.Screen name="Maker" component={PetMaker} />
       <Stack.Screen name="Namer" component={PetNamer} />
       <Stack.Screen name="Interact" component={PetInteraction} />
-      <Stack.Screen name="Camera" component={CameraScreen} />
     </Stack.Navigator>
   );
 }
@@ -1486,8 +1375,5 @@ function App() {
     </NavigationContainer>
   );
 }
-
-
-
   
 export default App;
