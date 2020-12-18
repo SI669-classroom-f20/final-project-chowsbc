@@ -102,6 +102,7 @@ async function addNewToFireBase(species, pic, name, key, user, index){ //uncesse
       let data = qDocSnap.data();
       data.key = key;
       users.push(data);
+      
     });
   }
 
@@ -181,6 +182,20 @@ export class LoginScreen extends React.Component {
     }
   }
 
+  async componentDidMount() {
+    this.focusUnsubscribe = this.props.navigation.addListener('focus', this.onFocus);
+    this.updateLogin();
+  
+    }
+
+  onFocus = () => {
+    this.updateLogin();
+  }
+
+  updateLogin = async() => {
+    await loadUsers();
+  }
+
   onCreateAccount = async() => { // MAGGIE 16
     let users = getUsers();
     for (let user of users) {
@@ -205,7 +220,8 @@ export class LoginScreen extends React.Component {
     });
   }
 
-  onLogin = () => {
+  onLogin = async() => {
+    //await loadUsers();
     let users = getUsers();
     let email = this.state.emailInput;
     let pass = this.state.passwordInput;
