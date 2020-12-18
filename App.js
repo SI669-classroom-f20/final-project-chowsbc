@@ -2,7 +2,7 @@
 import 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { TextInput, Text, View, FlatList, TouchableOpacity, Image, KeyboardAvoidingView, Alert } from 'react-native';
+import { TextInput, Text, View, FlatList, TouchableOpacity, Image, KeyboardAvoidingView, Alert, Button } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +15,8 @@ import { firebaseConfig } from './Secrets.js';
 import fetch from 'node-fetch';
 import { CheckBox } from 'react-native-elements'
 import { Switch } from 'react-native-gesture-handler';    
+import * as Permissions from 'expo-permissions';
+import { Camera } from 'expo-camera';
 
 const Stack = createStackNavigator();
 const appName = "ListMaker 3000";
@@ -945,33 +947,185 @@ class ProfileScreen extends React.Component {
 
   constructor(props) {
     super(props);
-  }
-  onTakePicture = () => {
+    this.state = {
+      user: 'Al',
 
-    this.props.navigation.navigate("Camera");
-    this.props.navigation.navigate("Camera", {
-      chat: this.chat,
-      currentUser: this.self
+    }
+  }
+
+  
+  onTakePicture = () => {
+    
+   // this.props.navigation.navigate("CameraScreen");
+    this.props.navigation.navigate("CameraScreen", {
+      currentUser: this.state.user
     })
   }
+
+  // { var representing image  ? what to do if it exists : what to do if it doesn't exist}
+  /*<Image
+                    style={{width: this.imageWidth, height: this.imageHeight}}
+                    source={{uri: item.imageURL}}
+                  />*/
 
   render() {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>
-          This is a profile page!
-        </Text>
+       
+        
+        
+     
         <TouchableOpacity
               
               //onPress={()=>{this.props.navigation.navigate("Camera")}}>
               onPress={()=>{this.onTakePicture()}}>
                 <Text> + Add a Profile Pic </Text>
+              
             </TouchableOpacity>  
       </View>
     );
   }
 }
 
+export class CameraScreen extends React.Component {
+
+  constructor(props) {
+    super(props);
+    this.storageRef = firebase.storage().ref();
+
+
+    this.state = {
+      hasCameraPermission: null,
+      type: Camera.Constants.Type.back,
+      user: this.props.route.params.currentUser,
+    };  
+  }
+
+  componentDidMount() {
+   this.getPermissions();
+   console.log ("camera screen called");
+   console.log("CameraScreen this.user is : ", this.state.user); //this works
+   console.log("CameraScreen this.props.route.params.currentUser is : ", this.props.route.params.currentUser); //this also works
+  }
+  
+
+  getPermissions = async () => {
+      let cameraPerms = await Permissions.askAsync(Permissions.CAMERA);
+  
+      let permGranted = cameraPerms.status === 'granted';
+      this.setState({
+        hasCameraPermission: permGranted
+      });
+    }
+  
+    handleTakePicture = async () => {
+      let picData = await this.camera.takePictureAsync();
+      console.log ("a picture was taken: ", picData);
+      //this.dataModel.addChatImage(this.chat, this.currentUser, picData);
+      this.addNewImage(this.state.user, picData);
+      //this.addNewImage(picData);
+      console.log("next line reached");
+      this.props.navigation.goBack();
+    }
+  
+    setupCamera = async (cameraRef) => { 
+      this.camera = cameraRef;
+    }
+  
+    addNewImage = async (user, imageObject) => {
+      console.log('... and here we would add the image ...');
+      
+  
+      this.theImage = imageObject;
+      this.user = this.state.user;
+         console.log("ANI this.theImage is: ", this.theImage);
+         console.log("ANI this.user is: ", this.user);
+  
+      let filename = '' + Date.now();
+          console.log("ANI filename is: ", filename);
+
+      let imageRef = this.storageRef.child(filename);
+      let response = await fetch(imageObject.uri);
+          
+      
+      let imageBlob = await response.blob();
+       await imageRef.put(imageBlob);
+  
+      let downloadURL = await imageRef.getDownloadURL();
+          console.log("ANI downloadURL is: ", downloadURL);
+  
+  
+      
+      
+      let fbImageObject = {
+        height: imageObject.height,
+        width: imageObject.width,
+        imageURL: downloadURL,
+        timestamp: Date.now(),
+        user: this.state.user,
+      }
+          
+          console.log("fbImageObject is : ", fbImageObject);
+     
+      //let users =  this.usersRef.doc(user).collection('users');
+      let users  = db.collection('users').doc(String(user)); 
+      //console.log("users is: ", users);
+      await users.add(fbImageObject);
+    }
+  
+  
+  
+    render() {
+      const { hasCameraPermission } = this.state;
+      if (hasCameraPermission === null) {
+        return <View />;
+      } else if (hasCameraPermission === false) {
+        return <Text>No access to camera</Text>;
+      } else {
+        return (
+          <View style={{ flex: 1 }}>
+            <Camera 
+              style={{ flex: 1 }} 
+              type={this.state.type}
+              ratio='4:3'
+              pictureSize='Medium'
+              ref={this.setupCamera}
+            >
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: 'transparent',
+                  flexDirection: 'row',
+                }}>
+                <TouchableOpacity
+                  style={{
+                    flex: 0.1,
+                    alignSelf: 'flex-end',
+                    alignItems: 'center',
+                  }}
+                  onPress={() => {
+                    this.setState({
+                      type:
+                        this.state.type === Camera.Constants.Type.back
+                          ? Camera.Constants.Type.front
+                          : Camera.Constants.Type.back,
+                    });
+                  }}>
+                  <Text style={{ fontSize: 18, marginBottom: 10, color: 'white' }}> 
+                    Flip 
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </Camera>
+            <Button
+              title='Take Picture'
+              onPress={this.handleTakePicture}
+            />
+          </View>
+        );
+      }
+    }
+  }
 class PetInteraction extends React.Component {
 
   constructor(props) {
@@ -1356,6 +1510,7 @@ function Home() {
       <Stack.Screen name="Maker" component={PetMaker} />
       <Stack.Screen name="Namer" component={PetNamer} />
       <Stack.Screen name="Interact" component={PetInteraction} />
+      <Stack.Screen name="CameraScreen" component={CameraScreen} />
     </Stack.Navigator>
   );
 }
