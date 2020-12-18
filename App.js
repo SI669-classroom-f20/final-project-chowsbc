@@ -1008,7 +1008,7 @@ class PetInteraction extends React.Component {
     this.setState({theList:appPets});
     this.setState({list_wascreated:true});
     this.state.currentpet = this.state.theList[(this.props.route.params.Place)];
-    //await this.updateTimer(this.state.currentpet.key, this.state.currentpet, this.state.currentpet.dateAdded, this.state.currentpet.Stamina, this.state.currentpet.Happiness); //ALISON - updateTimer() gets called when the pet page laods after the user clicks the Interact button
+    await this.updateTimer(this.state.currentpet.key, this.state.currentpet, this.state.currentpet.dateAdded, this.state.currentpet.Stamina, this.state.currentpet.Happiness); //ALISON - updateTimer() gets called when the pet page laods after the user clicks the Interact button
     await getPets();  //need to call getPets again to get changes made in updateTimer
     this.setState({theList:appPets}); 
     this.setState({list_wascreated:true});
