@@ -34,7 +34,7 @@ let users = []; // MAGGIE 16
 let currentuser = ''; //STEPHEN 17
 
 //Adds pet to firebase using props from naming screeen
-async function addNewToFireBase(species, pic, name, key, user, index){ //uncessessary required variables removed STEPHEN 17
+async function addNewToFireBase(species, pic, name, key, user, lastplay, index){ //uncessessary required variables removed STEPHEN 17
   let itemRef = db.collection('pets').doc(String(index));  
     itemRef.set ({
         species:species,
@@ -47,11 +47,14 @@ async function addNewToFireBase(species, pic, name, key, user, index){ //uncesse
         canPlay: true,
         dateAdded: new Date (),
         user: user, // STEPHEN 17
+        lastplay: lastplay,
         index: index,
     });
   }
 
-  async function UpdateToFireBase(species, pic, name, key, Stamina, Happiness, canFeed, canPlay, dateAdded, index){ //STEPHEN---update function has more required variables so that it can replace old pet documents without adding in pre-set values
+  //STEPHEN 18 * MOVED ACTIVATEFEED, REFRESHFEED, ACTIVATEPLAY, & REFRESHPLAY TO PETINTERACTION COMPONENT
+
+  async function UpdateToFireBase(species, pic, name, key, Stamina, Happiness, canFeed, canPlay, dateAdded, lastplay, index){ //STEPHEN---update function has more required variables so that it can replace old pet documents without adding in pre-set values
     
     let newPet = {  // MAGGIE E
       species:species,
@@ -63,6 +66,7 @@ async function addNewToFireBase(species, pic, name, key, user, index){ //uncesse
       canFeed: canFeed,
       canPlay: canPlay,
       dateAdded: dateAdded,
+      lastplay, lastplay,
       index: index
   }
     let itemRef = db.collection('pets').doc(String(index));
@@ -132,44 +136,7 @@ async function addNewToFireBase(species, pic, name, key, user, index){ //uncesse
       }
     }
   }
-
-
-  function activateFeed(pet) { // MAGGIE: not sure if this works, needs testing
-    UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, true, pet.canPlay, pet.dateAdded, pet.index);
-    console.log('activatefeed')
-    pet.canFeed = true; // MAGGIE 16
-    // feedbutton = true;
-  }
-
-  function activatePlay(pet) { // MAGGIE: not sure if this works, needs testing
-    console.log('activateplay')
-    UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, true, pet.dateAdded, pet.index);
-    pet.canPlay = true; // MAGGIE 16
-    // playbutton = true;
-  }
-
-  async function refreshFeed(pet, feedbutton) { // MAGGIE 16
-    console.log('refreshfeed')
-    if (pet.canFeed == true) {
-      return;
-    }
-    else {
-      setTimeout(() => feedbutton = activateFeed(pet), 5000);
-
-    }
-  }
-
-  async function refreshPlay(pet, playbutton) { // MAGGIE 16
-    console.log('refreshplay')
-    if (pet.canPlay == true) {
-      return;
-    }
-    else {
-      setTimeout(() => playbutton = activatePlay(pet), 5000); // MAGGIE 16
-    }
-    
-  }
-
+  
 export class LoginScreen extends React.Component {
   constructor(props) { // MAGGIE 16
     super(props);
@@ -440,9 +407,9 @@ class HomeScreen extends React.Component {
         let multiplier = 0
         let pointsToRemove = 10;
     
-        if(dateDifference > 600000 && stamina !=0 && happiness !=0 )  //for testing: swap 86400000 for 60000 to test in minutes
+        if(dateDifference > 60000 && stamina !=0 && happiness !=0 )  //for testing: swap 86400000 for 60000 to test in minutes
     
-        multiplier = Math.floor(dateDifference/600000); //for testing: swap 86400000 for 60000 to test in minutes
+        multiplier = Math.floor(dateDifference/60000); //for testing: swap 86400000 for 60000 to test in minutes
              //console.log("multiplyer is : ", multiplier);
           
         multipliedPointsToRemove = pointsToRemove * multiplier  //mulitply number of days by number of points to remove per dat
@@ -458,7 +425,7 @@ class HomeScreen extends React.Component {
          this.onDeletePet(index)
        }
     
-       UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.stamina, pet.happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.index)
+       UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.stamina, pet.happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.lastplay, pet.index)
     
       }
 
@@ -964,7 +931,7 @@ render() {
         style={[(this.state.inputText) ? styles.footerButton:styles.footerButton2]}
         onPress={()=>{let index = this.place + Math.random()
         this.props.navigation.navigate("Home",
-        addNewToFireBase(this.animal, this.picture, this.state.inputText, this.place, this.user.displayName, index)
+        addNewToFireBase(this.animal, this.picture, this.state.inputText, this.place, this.user.displayName, 0, index)
         )}}>
         <Text>Create Pet!</Text>
       </TouchableOpacity>
@@ -1016,19 +983,18 @@ class PetInteraction extends React.Component {
       feedbutton: true,
       playbutton: true,
       timeOfPlayPress: 'reee',
-      y: '',
-      // dummy: 0,
+      brrr: 0,
     }
   }
 
   async componentDidMount() {
     this.focusUnsubscribe = this.props.navigation.addListener('focus', this.onFocus);
     this.updateDataframe();
-    // this.apiCalls();
     }
 
     componentWillUnmount() {
     this.focusUnsubscribe();
+    this.setState()
   }
 
   // apiCalls() {
@@ -1042,7 +1008,7 @@ class PetInteraction extends React.Component {
     this.setState({theList:appPets});
     this.setState({list_wascreated:true});
     this.state.currentpet = this.state.theList[(this.props.route.params.Place)];
-    await this.updateTimer(this.state.currentpet.key, this.state.currentpet, this.state.currentpet.dateAdded, this.state.currentpet.Stamina, this.state.currentpet.Happiness); //ALISON - updateTimer() gets called when the pet page laods after the user clicks the Interact button
+    //await this.updateTimer(this.state.currentpet.key, this.state.currentpet, this.state.currentpet.dateAdded, this.state.currentpet.Stamina, this.state.currentpet.Happiness); //ALISON - updateTimer() gets called when the pet page laods after the user clicks the Interact button
     await getPets();  //need to call getPets again to get changes made in updateTimer
     this.setState({theList:appPets}); 
     this.setState({list_wascreated:true});
@@ -1066,9 +1032,9 @@ class PetInteraction extends React.Component {
     let multiplier = 0
     let pointsToRemove = 10;
 
-    if(dateDifference > 20000 && stamina !=0 && happiness !=0 )  //for testing: swap 86400000 for 60000 to test in minutes
+    if(dateDifference > 60000 && stamina !=0 && happiness !=0 )  //for testing: swap 86400000 for 60000 to test in minutes
 
-    multiplier = Math.floor(dateDifference/20000); //for testing: swap 86400000 for 60000 to test in minutes
+    multiplier = Math.floor(dateDifference/60000); //for testing: swap 86400000 for 60000 to test in minutes
          //console.log("multiplyer is : ", multiplier);
       
     multipliedPointsToRemove = pointsToRemove * multiplier  //mulitply number of days by number of points to remove per dat
@@ -1082,7 +1048,7 @@ class PetInteraction extends React.Component {
 
    
 
-   UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.stamina, pet.happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.index)
+   UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.stamina, pet.happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.lastplay, pet.index)
 
   }
 
@@ -1122,11 +1088,11 @@ class PetInteraction extends React.Component {
       pet.Stamina += 20;
       pet.canFeed = false;
       this.setState({feedbutton:false});
-      await refreshFeed(pet, this.state.feedbutton); // MAGGIE 16
+      await this.refreshFeed(pet, this.state.feedbutton); // MAGGIE 16
       if (pet.Stamina > 100) {
         pet.Stamina = 100
       } // MAGGIE E
-      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.index); //STEPHEN: This seems to be a simpler way to update the pet in firebase. Adding the a doc with the same id replaces the old doc.
+      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.lastplay, pet.index); //STEPHEN: This seems to be a simpler way to update the pet in firebase. Adding the a doc with the same id replaces the old doc.
       this.updateDataframe(); // MAGGIE E
       this.setState({
         currentpet: pet,
@@ -1142,11 +1108,53 @@ class PetInteraction extends React.Component {
   NegfeedPet = async(id, pet) => { // STEPHEN: Recomend reducing this for testing purposes. Didn't get to this yet.
     
       pet.Stamina += (0 - 15);
-      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay); //STEPHEN: This seems to be a simpler way to update the pet in firebase. Adding the a doc with the same id replaces the old doc.
+      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.lastplay, pet.index); //STEPHEN: This seems to be a simpler way to update the pet in firebase. Adding the a doc with the same id replaces the old doc.
       this.updateDataframe();
       return pet; 
 
   }
+
+  activateFeed(pet) { // MAGGIE: not sure if this works, needs testing //STEPHEN 18 **MOVED TO FROM HELPER FUNCTIONS
+    UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, true, pet.canPlay, pet.dateAdded, pet.lastplay, pet.index);
+    console.log('activatefeed')
+    pet.canFeed = true; // MAGGIE 16
+    this.updateDataframe()
+    this.updateDataframe()
+    // feedbutton = true;
+  }
+
+  activatePlay(pet) { // MAGGIE: not sure if this works, needs testing //STEPHEN 18 **MOVED TO FROM HELPER FUNCTIONS
+    UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, true, pet.dateAdded, pet.lastplay, pet.index);
+    console.log('activatePlay')
+    pet.canPlay = true; // MAGGIE 16
+    this.updateDataframe()
+    this.updateDataframe()
+    // feedbutton = true;
+  }
+
+   async refreshFeed(pet, feedbutton) { // MAGGIE 16 //STEPHEN 18 **MOVED TO FROM HELPER FUNCTIONS
+    console.log('refreshfeed')
+    if (pet.canFeed == true) {
+      return;
+    }
+    else {
+      setTimeout(() => feedbutton = this.activateFeed(pet), 5000);
+
+    }
+  }
+
+
+  async refreshPlay(pet, playbutton) { // MAGGIE 16  //STEPHEN 18 **MOVED TO FROM HELPER FUNCTIONS
+    console.log('refreshplay')
+    if (pet.canPlay == true) {
+      return;
+    }
+    else {
+      setTimeout(() => playbutton = this.activatePlay(pet), 5000); // MAGGIE 16
+    }
+    
+  }
+
 
   playPet = async(pet) => {
 
@@ -1154,11 +1162,12 @@ class PetInteraction extends React.Component {
       pet.Happiness += 20;
       pet.canPlay = false;
       this.setState({playbutton:false});
-      await refreshPlay(pet, this.state.playbutton); // MAGGIE 16
+      await this.refreshPlay(pet, this.state.playbutton); // MAGGIE 16
       if (pet.Happiness > 100) {
         pet.Happiness = 100
       }
-      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.index); //STEPHEN: See above
+      let latestDate = (new Date());
+      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay, pet.dateAdded, latestDate, pet.index); //STEPHEN: See above
       this.updateDataframe(); // MAGGIE E: added awaits
       this.setState({
         currentpet: pet,
@@ -1176,10 +1185,9 @@ class PetInteraction extends React.Component {
   // }
 
   NegplayPet = async(id, pet) => {
-  
    
       pet.Happiness += (0 - 15);
-      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay); //STEPHEN: See above
+      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.lastplay, pet.index); //STEPHEN: See above
       this.updateDataframe();
       return pet;
     
