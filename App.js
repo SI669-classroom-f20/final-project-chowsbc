@@ -2,7 +2,7 @@
 import 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { TextInput, Text, View, FlatList, TouchableOpacity, Image, KeyboardAvoidingView, Alert, Button } from 'react-native';
+import { TextInput, Text, View, FlatList, TouchableOpacity, Image, KeyboardAvoidingView, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,8 +15,6 @@ import { firebaseConfig } from './Secrets.js';
 import fetch from 'node-fetch';
 import { CheckBox } from 'react-native-elements'
 import { Switch } from 'react-native-gesture-handler';    
-import * as Permissions from 'expo-permissions';
-import { Camera } from 'expo-camera';
 
 const Stack = createStackNavigator();
 const appName = "ListMaker 3000";
@@ -36,7 +34,7 @@ let users = []; // MAGGIE 16
 let currentuser = ''; //STEPHEN 17
 
 //Adds pet to firebase using props from naming screeen
-async function addNewToFireBase(species, pic, name, key, user, lastplay, index){ //uncessessary required variables removed STEPHEN 17
+async function addNewToFireBase(species, pic, name, key, user, index){ //uncessessary required variables removed STEPHEN 17
   let itemRef = db.collection('pets').doc(String(index));  
     itemRef.set ({
         species:species,
@@ -49,14 +47,11 @@ async function addNewToFireBase(species, pic, name, key, user, lastplay, index){
         canPlay: true,
         dateAdded: new Date (),
         user: user, // STEPHEN 17
-        lastplay: lastplay,
         index: index,
     });
   }
 
-  //STEPHEN 18 * MOVED ACTIVATEFEED, REFRESHFEED, ACTIVATEPLAY, & REFRESHPLAY TO PETINTERACTION COMPONENT
-
-  async function UpdateToFireBase(species, pic, name, key, Stamina, Happiness, canFeed, canPlay, dateAdded, lastplay, index){ //STEPHEN---update function has more required variables so that it can replace old pet documents without adding in pre-set values
+  async function UpdateToFireBase(species, pic, name, key, Stamina, Happiness, canFeed, canPlay, dateAdded, index){ //STEPHEN---update function has more required variables so that it can replace old pet documents without adding in pre-set values
     
     let newPet = {  // MAGGIE E
       species:species,
@@ -68,7 +63,6 @@ async function addNewToFireBase(species, pic, name, key, user, lastplay, index){
       canFeed: canFeed,
       canPlay: canPlay,
       dateAdded: dateAdded,
-      lastplay, lastplay,
       index: index
   }
     let itemRef = db.collection('pets').doc(String(index));
@@ -138,7 +132,44 @@ async function addNewToFireBase(species, pic, name, key, user, lastplay, index){
       }
     }
   }
-  
+
+
+  function activateFeed(pet) { // MAGGIE: not sure if this works, needs testing
+    UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, true, pet.canPlay, pet.dateAdded, pet.index);
+    console.log('activatefeed')
+    pet.canFeed = true; // MAGGIE 16
+    // feedbutton = true;
+  }
+
+  function activatePlay(pet) { // MAGGIE: not sure if this works, needs testing
+    console.log('activateplay')
+    UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, true, pet.dateAdded, pet.index);
+    pet.canPlay = true; // MAGGIE 16
+    // playbutton = true;
+  }
+
+  async function refreshFeed(pet, feedbutton) { // MAGGIE 16
+    console.log('refreshfeed')
+    if (pet.canFeed == true) {
+      return;
+    }
+    else {
+      setTimeout(() => feedbutton = activateFeed(pet), 5000);
+
+    }
+  }
+
+  async function refreshPlay(pet, playbutton) { // MAGGIE 16
+    console.log('refreshplay')
+    if (pet.canPlay == true) {
+      return;
+    }
+    else {
+      setTimeout(() => playbutton = activatePlay(pet), 5000); // MAGGIE 16
+    }
+    
+  }
+
 export class LoginScreen extends React.Component {
   constructor(props) { // MAGGIE 16
     super(props);
@@ -409,9 +440,9 @@ class HomeScreen extends React.Component {
         let multiplier = 0
         let pointsToRemove = 10;
     
-        if(dateDifference > 60000 && stamina !=0 && happiness !=0 )  //for testing: swap 86400000 for 60000 to test in minutes
+        if(dateDifference > 600000 && stamina !=0 && happiness !=0 )  //for testing: swap 86400000 for 60000 to test in minutes
     
-        multiplier = Math.floor(dateDifference/60000); //for testing: swap 86400000 for 60000 to test in minutes
+        multiplier = Math.floor(dateDifference/600000); //for testing: swap 86400000 for 60000 to test in minutes
              //console.log("multiplyer is : ", multiplier);
           
         multipliedPointsToRemove = pointsToRemove * multiplier  //mulitply number of days by number of points to remove per dat
@@ -427,7 +458,7 @@ class HomeScreen extends React.Component {
          this.onDeletePet(index)
        }
     
-       UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.stamina, pet.happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.lastplay, pet.index)
+       UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.stamina, pet.happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.index)
     
       }
 
@@ -933,7 +964,7 @@ render() {
         style={[(this.state.inputText) ? styles.footerButton:styles.footerButton2]}
         onPress={()=>{let index = this.place + Math.random()
         this.props.navigation.navigate("Home",
-        addNewToFireBase(this.animal, this.picture, this.state.inputText, this.place, this.user.displayName, 0, index)
+        addNewToFireBase(this.animal, this.picture, this.state.inputText, this.place, this.user.displayName, index)
         )}}>
         <Text>Create Pet!</Text>
       </TouchableOpacity>
@@ -947,185 +978,33 @@ class ProfileScreen extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {
-      user: 'Al',
-
-    }
   }
-
-  
   onTakePicture = () => {
-    
-   // this.props.navigation.navigate("CameraScreen");
-    this.props.navigation.navigate("CameraScreen", {
-      currentUser: this.state.user
+
+    this.props.navigation.navigate("Camera");
+    this.props.navigation.navigate("Camera", {
+      chat: this.chat,
+      currentUser: this.self
     })
   }
-
-  // { var representing image  ? what to do if it exists : what to do if it doesn't exist}
-  /*<Image
-                    style={{width: this.imageWidth, height: this.imageHeight}}
-                    source={{uri: item.imageURL}}
-                  />*/
 
   render() {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-       
-        
-        
-     
+        <Text>
+          This is a profile page!
+        </Text>
         <TouchableOpacity
               
               //onPress={()=>{this.props.navigation.navigate("Camera")}}>
               onPress={()=>{this.onTakePicture()}}>
                 <Text> + Add a Profile Pic </Text>
-              
             </TouchableOpacity>  
       </View>
     );
   }
 }
 
-export class CameraScreen extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.storageRef = firebase.storage().ref();
-
-
-    this.state = {
-      hasCameraPermission: null,
-      type: Camera.Constants.Type.back,
-      user: this.props.route.params.currentUser,
-    };  
-  }
-
-  componentDidMount() {
-   this.getPermissions();
-   console.log ("camera screen called");
-   console.log("CameraScreen this.user is : ", this.state.user); //this works
-   console.log("CameraScreen this.props.route.params.currentUser is : ", this.props.route.params.currentUser); //this also works
-  }
-  
-
-  getPermissions = async () => {
-      let cameraPerms = await Permissions.askAsync(Permissions.CAMERA);
-  
-      let permGranted = cameraPerms.status === 'granted';
-      this.setState({
-        hasCameraPermission: permGranted
-      });
-    }
-  
-    handleTakePicture = async () => {
-      let picData = await this.camera.takePictureAsync();
-      console.log ("a picture was taken: ", picData);
-      //this.dataModel.addChatImage(this.chat, this.currentUser, picData);
-      this.addNewImage(this.state.user, picData);
-      //this.addNewImage(picData);
-      console.log("next line reached");
-      this.props.navigation.goBack();
-    }
-  
-    setupCamera = async (cameraRef) => { 
-      this.camera = cameraRef;
-    }
-  
-    addNewImage = async (user, imageObject) => {
-      console.log('... and here we would add the image ...');
-      
-  
-      this.theImage = imageObject;
-      this.user = this.state.user;
-         console.log("ANI this.theImage is: ", this.theImage);
-         console.log("ANI this.user is: ", this.user);
-  
-      let filename = '' + Date.now();
-          console.log("ANI filename is: ", filename);
-
-      let imageRef = this.storageRef.child(filename);
-      let response = await fetch(imageObject.uri);
-          
-      
-      let imageBlob = await response.blob();
-       await imageRef.put(imageBlob);
-  
-      let downloadURL = await imageRef.getDownloadURL();
-          console.log("ANI downloadURL is: ", downloadURL);
-  
-  
-      
-      
-      let fbImageObject = {
-        height: imageObject.height,
-        width: imageObject.width,
-        imageURL: downloadURL,
-        timestamp: Date.now(),
-        user: this.state.user,
-      }
-          
-          console.log("fbImageObject is : ", fbImageObject);
-     
-      //let users =  this.usersRef.doc(user).collection('users');
-      let users  = db.collection('users').doc(String(user)); 
-      //console.log("users is: ", users);
-      await users.add(fbImageObject);
-    }
-  
-  
-  
-    render() {
-      const { hasCameraPermission } = this.state;
-      if (hasCameraPermission === null) {
-        return <View />;
-      } else if (hasCameraPermission === false) {
-        return <Text>No access to camera</Text>;
-      } else {
-        return (
-          <View style={{ flex: 1 }}>
-            <Camera 
-              style={{ flex: 1 }} 
-              type={this.state.type}
-              ratio='4:3'
-              pictureSize='Medium'
-              ref={this.setupCamera}
-            >
-              <View
-                style={{
-                  flex: 1,
-                  backgroundColor: 'transparent',
-                  flexDirection: 'row',
-                }}>
-                <TouchableOpacity
-                  style={{
-                    flex: 0.1,
-                    alignSelf: 'flex-end',
-                    alignItems: 'center',
-                  }}
-                  onPress={() => {
-                    this.setState({
-                      type:
-                        this.state.type === Camera.Constants.Type.back
-                          ? Camera.Constants.Type.front
-                          : Camera.Constants.Type.back,
-                    });
-                  }}>
-                  <Text style={{ fontSize: 18, marginBottom: 10, color: 'white' }}> 
-                    Flip 
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </Camera>
-            <Button
-              title='Take Picture'
-              onPress={this.handleTakePicture}
-            />
-          </View>
-        );
-      }
-    }
-  }
 class PetInteraction extends React.Component {
 
   constructor(props) {
@@ -1137,18 +1016,19 @@ class PetInteraction extends React.Component {
       feedbutton: true,
       playbutton: true,
       timeOfPlayPress: 'reee',
-      brrr: 0,
+      y: '',
+      // dummy: 0,
     }
   }
 
   async componentDidMount() {
     this.focusUnsubscribe = this.props.navigation.addListener('focus', this.onFocus);
     this.updateDataframe();
+    // this.apiCalls();
     }
 
     componentWillUnmount() {
     this.focusUnsubscribe();
-    this.setState()
   }
 
   // apiCalls() {
@@ -1186,9 +1066,9 @@ class PetInteraction extends React.Component {
     let multiplier = 0
     let pointsToRemove = 10;
 
-    if(dateDifference > 60000 && stamina !=0 && happiness !=0 )  //for testing: swap 86400000 for 60000 to test in minutes
+    if(dateDifference > 20000 && stamina !=0 && happiness !=0 )  //for testing: swap 86400000 for 60000 to test in minutes
 
-    multiplier = Math.floor(dateDifference/60000); //for testing: swap 86400000 for 60000 to test in minutes
+    multiplier = Math.floor(dateDifference/20000); //for testing: swap 86400000 for 60000 to test in minutes
          //console.log("multiplyer is : ", multiplier);
       
     multipliedPointsToRemove = pointsToRemove * multiplier  //mulitply number of days by number of points to remove per dat
@@ -1202,7 +1082,7 @@ class PetInteraction extends React.Component {
 
    
 
-   UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.stamina, pet.happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.lastplay, pet.index)
+   UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.stamina, pet.happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.index)
 
   }
 
@@ -1242,11 +1122,11 @@ class PetInteraction extends React.Component {
       pet.Stamina += 20;
       pet.canFeed = false;
       this.setState({feedbutton:false});
-      await this.refreshFeed(pet, this.state.feedbutton); // MAGGIE 16
+      await refreshFeed(pet, this.state.feedbutton); // MAGGIE 16
       if (pet.Stamina > 100) {
         pet.Stamina = 100
       } // MAGGIE E
-      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.lastplay, pet.index); //STEPHEN: This seems to be a simpler way to update the pet in firebase. Adding the a doc with the same id replaces the old doc.
+      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.index); //STEPHEN: This seems to be a simpler way to update the pet in firebase. Adding the a doc with the same id replaces the old doc.
       this.updateDataframe(); // MAGGIE E
       this.setState({
         currentpet: pet,
@@ -1262,53 +1142,11 @@ class PetInteraction extends React.Component {
   NegfeedPet = async(id, pet) => { // STEPHEN: Recomend reducing this for testing purposes. Didn't get to this yet.
     
       pet.Stamina += (0 - 15);
-      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.lastplay, pet.index); //STEPHEN: This seems to be a simpler way to update the pet in firebase. Adding the a doc with the same id replaces the old doc.
+      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay); //STEPHEN: This seems to be a simpler way to update the pet in firebase. Adding the a doc with the same id replaces the old doc.
       this.updateDataframe();
       return pet; 
 
   }
-
-  activateFeed(pet) { // MAGGIE: not sure if this works, needs testing //STEPHEN 18 **MOVED TO FROM HELPER FUNCTIONS
-    UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, true, pet.canPlay, pet.dateAdded, pet.lastplay, pet.index);
-    console.log('activatefeed')
-    pet.canFeed = true; // MAGGIE 16
-    this.updateDataframe()
-    this.updateDataframe()
-    // feedbutton = true;
-  }
-
-  activatePlay(pet) { // MAGGIE: not sure if this works, needs testing //STEPHEN 18 **MOVED TO FROM HELPER FUNCTIONS
-    UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, true, pet.dateAdded, pet.lastplay, pet.index);
-    console.log('activatePlay')
-    pet.canPlay = true; // MAGGIE 16
-    this.updateDataframe()
-    this.updateDataframe()
-    // feedbutton = true;
-  }
-
-   async refreshFeed(pet, feedbutton) { // MAGGIE 16 //STEPHEN 18 **MOVED TO FROM HELPER FUNCTIONS
-    console.log('refreshfeed')
-    if (pet.canFeed == true) {
-      return;
-    }
-    else {
-      setTimeout(() => feedbutton = this.activateFeed(pet), 5000);
-
-    }
-  }
-
-
-  async refreshPlay(pet, playbutton) { // MAGGIE 16  //STEPHEN 18 **MOVED TO FROM HELPER FUNCTIONS
-    console.log('refreshplay')
-    if (pet.canPlay == true) {
-      return;
-    }
-    else {
-      setTimeout(() => playbutton = this.activatePlay(pet), 5000); // MAGGIE 16
-    }
-    
-  }
-
 
   playPet = async(pet) => {
 
@@ -1316,12 +1154,11 @@ class PetInteraction extends React.Component {
       pet.Happiness += 20;
       pet.canPlay = false;
       this.setState({playbutton:false});
-      await this.refreshPlay(pet, this.state.playbutton); // MAGGIE 16
+      await refreshPlay(pet, this.state.playbutton); // MAGGIE 16
       if (pet.Happiness > 100) {
         pet.Happiness = 100
       }
-      let latestDate = (new Date());
-      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay, pet.dateAdded, latestDate, pet.index); //STEPHEN: See above
+      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.index); //STEPHEN: See above
       this.updateDataframe(); // MAGGIE E: added awaits
       this.setState({
         currentpet: pet,
@@ -1339,9 +1176,10 @@ class PetInteraction extends React.Component {
   // }
 
   NegplayPet = async(id, pet) => {
+  
    
       pet.Happiness += (0 - 15);
-      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay, pet.dateAdded, pet.lastplay, pet.index); //STEPHEN: See above
+      await UpdateToFireBase(pet.species, pet.pic, pet.name, pet.key, pet.Stamina,pet.Happiness, pet.canFeed, pet.canPlay); //STEPHEN: See above
       this.updateDataframe();
       return pet;
     
@@ -1510,7 +1348,6 @@ function Home() {
       <Stack.Screen name="Maker" component={PetMaker} />
       <Stack.Screen name="Namer" component={PetNamer} />
       <Stack.Screen name="Interact" component={PetInteraction} />
-      <Stack.Screen name="CameraScreen" component={CameraScreen} />
     </Stack.Navigator>
   );
 }
