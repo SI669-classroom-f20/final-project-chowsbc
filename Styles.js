@@ -68,9 +68,9 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
+    padding: 20,
     marginHorizontal: '5%',
-    backgroundColor: colors.primaryDark,
+    backgroundColor: '#FF8E3C',
     
     },
 
@@ -83,7 +83,7 @@ export const styles = StyleSheet.create({
       width: 150,
       height: 50,
       marginHorizontal: '5%',
-      backgroundColor: colors.primaryDark,
+      backgroundColor: "#F88E3C",
       
       },
 
@@ -108,7 +108,7 @@ export const styles = StyleSheet.create({
       alignItems: 'center',
       padding: 5,
       marginHorizontal: '5%',
-      backgroundColor: colors.primaryDark,
+      backgroundColor: '#FF8E3C',
       
       },
   
@@ -123,7 +123,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
+    padding: 20,
     marginHorizontal: '5%',
     backgroundColor: 'lightgray',
     
@@ -184,7 +184,6 @@ export const styles = StyleSheet.create({
       justifyContent: 'flex-end',
       paddingRight: 5,
       textAlign: 'right',
-      fontSize: 10
     },
 
     inputText: {
@@ -214,7 +213,7 @@ export const styles = StyleSheet.create({
       borderWidth: 1,
       borderColor: colors.outline,
       borderRadius: 6,
-      backgroundColor: colors.primary,
+      backgroundColor: "#FF8E3C",
       width: 100,
       height: 50
     },

@@ -513,7 +513,7 @@ render() {
     firstItem = this.state.theList.find((element) => {return element.key === 1 })
     introtext=
   <View>
-  <Text>{firstItem.name}</Text>
+  <Text staye={styles.petname}>{firstItem.name}</Text>
   </View>
   }
   else {
@@ -1303,24 +1303,6 @@ class PetInteraction extends React.Component {
         }}>
 
         <Text>Play</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.petintbutton}
-       
-        onPress={()=>{  // MAGGIE
-   
-          this.NegfeedPet(this.state.currentpet.key, this.state.currentpet)
-        }}>
-        <Text>NegFeed</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.petintbutton}
-        onPress={()=>{
-          this.NegplayPet(this.state.currentpet.key, this.state.currentpet)
-        }}>
-
-        <Text>NegPlay</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
