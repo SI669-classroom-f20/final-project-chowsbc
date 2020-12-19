@@ -1367,7 +1367,7 @@ function Home() {
       initialRouteName="Login"
     >
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Profile" component={PicScreen} /> 
+      <Stack.Screen name="Pic" component={PicScreen} /> 
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Maker" component={PetMaker} />
       <Stack.Screen name="Namer" component={PetNamer} />
