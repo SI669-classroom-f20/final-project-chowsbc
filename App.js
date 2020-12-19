@@ -1002,21 +1002,16 @@ class ProfileScreen extends React.Component {
     })
   }
 
-  // { var representing image  ? what to do if it exists : what to do if it doesn't exist}
-  /*<Image
-                    style={{width: this.imageWidth, height: this.imageHeight}}
-                    source={{uri: item.imageURL}}
-                  />*/
 
   render() {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-       
-        
-        
-     
+        <View style={styles.userInfoContainer}>
+          <Text style={styles.userInfoText}>User: {this.state.user.displayName}</Text>
+          <Text style={styles.userInfoText}>Email: {this.state.user.email}</Text>
+        </View>
         <TouchableOpacity
-              
+              style={styles.takePicButton}
               //onPress={()=>{this.props.navigation.navigate("Camera")}}>
               onPress={()=>{this.onTakePicture()}}>
                 <Text> + Add a Profile Pic </Text>
@@ -1554,7 +1549,7 @@ function MyTabs() {
 function App() {
   return (
     <NavigationContainer>
-      <MyTabs />
+      <Home />
     </NavigationContainer>
   );
 }

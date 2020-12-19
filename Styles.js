@@ -218,4 +218,16 @@ export const styles = StyleSheet.create({
       height: 50
     },
 
+    userInfoContainer: {
+      flex: 0.4,
+    },
+
+    userInfoText: {
+      fontSize: 24,
+      fontWeight: 'bold',
+    },
+
+    takePicButton: {
+      margin: 30,
+    }
 });
