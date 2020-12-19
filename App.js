@@ -1042,7 +1042,7 @@ class ProfileScreen extends React.Component {
 }
 
 export class CameraScreen extends React.Component {
-
+//test
   constructor(props) {
     super(props);
     this.storageRef = firebase.storage().ref();
