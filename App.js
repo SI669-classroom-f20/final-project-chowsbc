@@ -215,7 +215,7 @@ export class LoginScreen extends React.Component {
       this.state.passwordInput,
       this.state.displayNameInput,
       );
-    this.props.navigation.navigate("Home", {
+    this.props.navigation.navigate("Pic", {
       currentUser: newUser,
     });
   }
@@ -229,7 +229,7 @@ export class LoginScreen extends React.Component {
       if (user.email === email) {
         if (user.password === pass) {
           // success!
-          this.props.navigation.navigate("Home", {
+          this.props.navigation.navigate("Pic", {
             currentUser: user,
           });
           return;
@@ -354,6 +354,47 @@ export class LoginScreen extends React.Component {
     );
   }
 
+}
+
+class PicScreen extends React.Component {
+
+  constructor(props) {
+    super(props);
+    currentuser = ''
+    this.state = {
+      kek: '',
+    }
+  }
+
+  async componentDidMount() {
+    this.focusUnsubscribe = this.props.navigation.addListener('focus', this.onFocus);
+    console.log(this.props.route.params.currentUser)
+    }
+    
+    onFocus = () => {
+      
+    }
+
+  componentWillUnmount() {
+    this.focusUnsubscribe();
+  }
+  
+
+  render() {
+    return (
+      <View>
+    <TouchableOpacity 
+      style={styles.footerButton}
+      onPress={()=>{
+        this.props.navigation.navigate("Home", {
+        Place: 1,
+        currentUser:this.props.route.params.currentUser //STEPHEN 17
+        })}}>
+      <Text>Pet Page</Text>
+    </TouchableOpacity>
+      </View>
+    );
+  }
 }
 
 
@@ -1325,7 +1366,8 @@ function Home() {
     <Stack.Navigator
       initialRouteName="Login"
     >
-      <Stack.Screen name="Login" component={LoginScreen} /> 
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Profile" component={PicScreen} /> 
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Maker" component={PetMaker} />
       <Stack.Screen name="Namer" component={PetNamer} />
