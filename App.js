@@ -43,8 +43,8 @@ async function addNewToFireBase(species, pic, name, key, user, index){ //uncesse
         pic:pic,
         name:name,
         key:key,
-        Stamina: 50,
-        Happiness: 40, // MAGGIE E: for testing!
+        Stamina: 80,
+        Happiness: 80, // MAGGIE E: for testing!
         canFeed: true,  // MAGGIE
         canPlay: true,
         dateAdded: new Date (),
@@ -156,7 +156,7 @@ async function addNewToFireBase(species, pic, name, key, user, index){ //uncesse
       return;
     }
     else {
-      setTimeout(() => feedbutton = activateFeed(pet), 5000);
+      setTimeout(() => feedbutton = activateFeed(pet), 10000);
 
     }
   }
@@ -167,7 +167,7 @@ async function addNewToFireBase(species, pic, name, key, user, index){ //uncesse
       return;
     }
     else {
-      setTimeout(() => playbutton = activatePlay(pet), 5000); // MAGGIE 16
+      setTimeout(() => playbutton = activatePlay(pet), 10000); // MAGGIE 16
     }
     
   }
@@ -438,14 +438,15 @@ class HomeScreen extends React.Component {
     
         //milliseconds per hour 3,600,000
         //milliseconds per day 86,400,000
+        
         //milliseconds per minute 60,000
     
         let multiplier = 0
-        let pointsToRemove = 10;
+        let pointsToRemove = 25;
     
-        if(dateDifference > 600000 && stamina !=0 && happiness !=0 )  //for testing: swap 86400000 for 60000 to test in minutes
+        if(dateDifference > 60000 && stamina !=0 && happiness !=0 )  //for testing: swap 86400000 for 60000 to test in minutes
     
-        multiplier = Math.floor(dateDifference/600000); //for testing: swap 86400000 for 60000 to test in minutes
+        multiplier = Math.floor(dateDifference/60000); //for testing: swap 86400000 for 60000 to test in minutes
              //console.log("multiplyer is : ", multiplier);
           
         multipliedPointsToRemove = pointsToRemove * multiplier  //mulitply number of days by number of points to remove per dat
